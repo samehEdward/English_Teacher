@@ -7,6 +7,7 @@ export const I18N = {
     spokenSuffix: 'Spoken',
     voiceLabel: 'Voice:',
     defaultVoice: 'Default Voice',
+    installBtn: 'App on Phone',
     nav: {
       read: '📖 Read & Speak',
       shadow: '🎧 Shadowing Lab',
@@ -52,6 +53,7 @@ export const I18N = {
     spokenSuffix: 'Gesprochen',
     voiceLabel: 'Stimme:',
     defaultVoice: 'Standardstimme (Deutsch)',
+    installBtn: 'App am Handy',
     nav: {
       read: '📖 Lesen & Sprechen',
       shadow: '🎧 Shadowing-Labor',

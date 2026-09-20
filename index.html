@@ -5,7 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>EchoSpeak — Local English Fluency Studio</title>
     <meta name="description" content="A 100% local, browser-based English learning studio to improve speaking skills through reading, writing, shadowing, and listening." />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'><path d='M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z'/><path d='M19 10v2a7 7 0 0 1-14 0v-2'/><line x1='12' y1='19' x2='12' y2='22' stroke='%236366f1' stroke-width='2'/></svg>" />
+    <link rel="icon" type="image/svg+xml" href="/icons/icon-192.svg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="EchoSpeak" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
     <link rel="stylesheet" href="/src/styles/main.css" />
   </head>
   <body>
@@ -60,6 +66,12 @@
               <option value="">Default Voice</option>
             </select>
           </div>
+
+          <!-- Smartphone App / PWA Install Button -->
+          <button class="btn btn-secondary btn-sm" id="headerInstallBtn" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: var(--radius-full); border-color: rgba(99, 102, 241, 0.45); color: #c7d2fe; background: rgba(99, 102, 241, 0.12);" title="Auf Smartphone installieren / Open on Phone">
+            <span style="font-size: 15px;">📲</span>
+            <span id="headerInstallText">App am Handy</span>
+          </button>
         </div>
       </header>
 
@@ -124,6 +136,55 @@
         <div style="display: flex; justify-content: flex-end; gap: 12px;">
           <button id="cancelModalBtn" class="btn btn-secondary">Cancel</button>
           <button id="saveCustomTextBtn" class="btn btn-primary">Save & Start Reading</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Smartphone PWA Install & QR Code Scanner -->
+    <div id="mobileAppModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mobileModalTitle">
+      <div class="modal-content glass-panel" style="max-width: 500px; text-align: center;">
+        <div class="modal-header" style="justify-content: space-between; display: flex; align-items: center; border-bottom: 1px solid var(--border-glass); padding-bottom: 12px; margin-bottom: 16px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 24px;">📱</span>
+            <h3 id="mobileModalTitle" style="font-size: 18px; font-weight: 700; color: #fff;">Auf Smartphone installieren</h3>
+          </div>
+          <button id="closeMobileModalBtn" class="modal-close-btn" aria-label="Close dialog">&times;</button>
+        </div>
+
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+          Scannen Sie diesen QR-Code mit der <strong>Kamera Ihres Smartphones</strong> (WLAN muss verbunden sein) oder öffnen Sie den Link direkt im Handy-Browser:
+        </p>
+
+        <!-- QR Code Display Box -->
+        <div style="background: #0f172a; padding: 14px; border-radius: 16px; display: inline-block; border: 2px solid rgba(99, 102, 241, 0.4); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); margin-bottom: 14px;">
+          <img id="mobileQrCodeImg" src="" alt="Scan QR Code to open on smartphone" width="200" height="200" style="display: block; border-radius: 8px;" />
+        </div>
+
+        <!-- Direct Link Box with Copy Button -->
+        <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border-glass); border-radius: 8px; padding: 8px 12px; margin-bottom: 18px; gap: 8px;">
+          <span id="mobileAppUrlDisplay" style="font-family: monospace; font-size: 13px; color: #38bdf8; word-break: break-all;">http://192.168.0.84:5174/</span>
+          <button id="copyPhoneUrlBtn" class="btn btn-secondary btn-sm" style="padding: 4px 10px; font-size: 12px;">Kopieren</button>
+        </div>
+
+        <!-- 3-Step Install Guide -->
+        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-glass); border-radius: 12px; padding: 14px; text-align: left; font-size: 12px; color: #cbd5e1; display: flex; flex-direction: column; gap: 10px;">
+          <div style="font-weight: 700; color: #fff; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+            <span>⚡</span>
+            <span>So installieren Sie die App am Smartphone:</span>
+          </div>
+
+          <div>
+            <strong style="color: #34d399;">🤖 Android (Chrome / Edge / Samsung):</strong><br />
+            1. QR-Code scannen &amp; Seite öffnen.<br />
+            2. Tippen Sie auf <strong>„App installieren“</strong> oder im Menü (⋮) auf <strong>„Zum Startbildschirm hinzufügen“</strong>.
+          </div>
+
+          <div>
+            <strong style="color: #60a5fa;">🍎 iPhone / iPad (Safari):</strong><br />
+            1. QR-Code mit der Kamera scannen und in Safari öffnen.<br />
+            2. Unten auf den <strong>Teilen-Button</strong> (Viereck mit Pfeil ⎋) tippen.<br />
+            3. Scrollen und <strong>„Zum Home-Bildschirm“</strong> (+ Add to Home Screen) wählen.
+          </div>
         </div>
       </div>
     </div>

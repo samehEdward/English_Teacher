@@ -11,6 +11,7 @@ import { RoleplayModule } from './modules/roleplayModule.js';
 import { PhoneticsModule } from './modules/phoneticsModule.js';
 import { VocationalModule } from './modules/vocationalModule.js';
 import { VaultModule } from './modules/vaultModule.js';
+import { pwaInstaller } from './services/pwaInstaller.js';
 
 class App {
   constructor() {
@@ -154,6 +155,9 @@ class App {
 
     const voiceLabel = document.getElementById('voiceSelectLabel');
     if (voiceLabel) voiceLabel.textContent = dict.voiceLabel;
+
+    const installText = document.getElementById('headerInstallText');
+    if (installText && dict.installBtn) installText.textContent = dict.installBtn;
 
     // Nav tabs
     const tabRead = document.querySelector('#navTabRead .tab-label');

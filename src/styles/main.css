@@ -1353,3 +1353,134 @@ body {
   font-size: 13px;
 }
 
+/* ==========================================================================
+   Mobile Responsive & Smartphone Optimization Styles
+   ========================================================================== */
+@media (max-width: 880px) {
+  .app-container {
+    padding: 12px 12px calc(40px + env(safe-area-inset-bottom, 20px)) 12px;
+    gap: 16px;
+  }
+
+  /* Two-column studio grids stack vertically on tablets & phones */
+  .studio-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
+
+  /* Header Layout */
+  .top-header {
+    padding: 14px 16px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .brand-section {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .header-controls {
+    justify-content: flex-start;
+    gap: 8px;
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  /* Nav Tabs momentum scrolling */
+  .nav-tabs {
+    padding: 6px;
+    gap: 6px;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+  }
+
+  .tab-btn {
+    padding: 8px 14px;
+    font-size: 13px;
+    scroll-snap-align: start;
+    flex-shrink: 0;
+  }
+
+  /* Vocational Studio Mobile Adjustments */
+  .voc-config-bar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 14px;
+    gap: 14px;
+  }
+
+  .voc-domain-selector {
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .voc-domain-btn {
+    width: 100%;
+    padding: 10px 14px;
+  }
+
+  .voc-modes-nav {
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+    gap: 6px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .voc-mode-tab {
+    flex-shrink: 0;
+    padding: 7px 13px;
+    font-size: 12px;
+  }
+
+  .voc-vocab-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .brand-title {
+    font-size: 19px;
+  }
+
+  .brand-badge {
+    font-size: 10px;
+    padding: 1px 6px;
+  }
+
+  .stat-chip {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+
+  .voice-picker-group {
+    padding: 3px 8px;
+  }
+
+  .voice-select {
+    max-width: 120px;
+    font-size: 12px;
+  }
+
+  .modal-content {
+    padding: 16px 14px;
+    border-radius: var(--radius-md);
+  }
+
+  /* Big touch friendly buttons */
+  .suggested-reply-card {
+    min-height: 48px;
+    padding: 10px 14px;
+  }
+
+  .btn {
+    min-height: 42px;
+  }
+}
+
+
