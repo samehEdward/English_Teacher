@@ -12,6 +12,7 @@ class AudioRecorderService {
     this.stream = null;
     this.isRecording = false;
     this.animationFrameId = null;
+    this._chimeCtx = null; // Reusable AudioContext for UI chimes
   }
 
   async initMicrophone() {
@@ -94,8 +95,8 @@ class AudioRecorderService {
 
   stopRecording() {
     return new Promise((resolve) => {
-      this.releaseMicrophone();
       if (!this.mediaRecorder || this.mediaRecorder.state === 'inactive') {
+        this.releaseMicrophone();
         this.isRecording = false;
         this.stopWaveformVisualizer();
         resolve(null);
@@ -103,6 +104,8 @@ class AudioRecorderService {
       }
 
       this.mediaRecorder.onstop = () => {
+        // Release mic stream AFTER MediaRecorder has flushed all data
+        this.releaseMicrophone();
         this.isRecording = false;
         this.stopWaveformVisualizer();
         this.audioBlob = new Blob(this.audioChunks, { type: this.mediaRecorder.mimeType || 'audio/webm' });
@@ -113,6 +116,7 @@ class AudioRecorderService {
       try {
         this.mediaRecorder.stop();
       } catch (e) {
+        this.releaseMicrophone();
         this.isRecording = false;
         this.stopWaveformVisualizer();
         resolve(null);
@@ -197,10 +201,21 @@ class AudioRecorderService {
   }
 
   // Synthesizes pleasant modern UI chimes using Web Audio API
+  // Reuses a single AudioContext to avoid exhausting mobile Chrome's ~6 context limit
+  _getChimeContext() {
+    if (!this._chimeCtx || this._chimeCtx.state === 'closed') {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      this._chimeCtx = new AudioCtx();
+    }
+    if (this._chimeCtx.state === 'suspended') {
+      this._chimeCtx.resume().catch(() => {});
+    }
+    return this._chimeCtx;
+  }
+
   playChime(type = 'success') {
     try {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      const ctx = new AudioCtx();
+      const ctx = this._getChimeContext();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 

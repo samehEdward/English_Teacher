@@ -227,69 +227,164 @@ export class ShadowingModule {
     });
   }
 
+  startWaveform(canvas) {
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let phase = 0;
+    const draw = () => {
+      if (!this.isRecording) {
+        this.stopWaveform(canvas);
+        return;
+      }
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+      gradient.addColorStop(0, '#06b6d4');
+      gradient.addColorStop(0.5, '#6366f1');
+      gradient.addColorStop(1, '#ec4899');
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = gradient;
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = '#6366f1';
+      ctx.beginPath();
+      const width = canvas.width;
+      const height = canvas.height;
+      const midY = height / 2;
+      const amp = this._capturedSpoken ? 16 : 8;
+      for (let x = 0; x < width; x += 4) {
+        const y = midY + Math.sin((x * 0.04) + phase) * amp * Math.sin((x / width) * Math.PI);
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      phase += 0.12;
+      this.waveformFrame = requestAnimationFrame(draw);
+    };
+    draw();
+  }
+
+  stopWaveform(canvas) {
+    if (this.waveformFrame) {
+      cancelAnimationFrame(this.waveformFrame);
+      this.waveformFrame = null;
+    }
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(99, 102, 241, 0.25)';
+      ctx.beginPath();
+      ctx.moveTo(0, canvas.height / 2);
+      ctx.lineTo(canvas.width, canvas.height / 2);
+      ctx.stroke();
+    }
+  }
+
   async toggleRecordShadow() {
     const btn = this.container.querySelector('#shadowRecordBtn');
     const textSpan = this.container.querySelector('#shadowRecordText');
     const canvas = this.container.querySelector('#shadowWaveformCanvas');
+    const isDe = this.currentLang === 'de';
 
     if (this.isRecording) {
-      const isDe = this.currentLang === 'de';
       this.isRecording = false;
+      this._shadowStoppedByUser = true;
       btn.classList.remove('recording');
       textSpan.textContent = isDe ? 'Shadowing aufnehmen' : 'Record Your Shadow';
+      this.stopWaveform(canvas);
       speechService.stopListening();
-      const recResult = await audioRecorder.stopRecording();
-      if (recResult && recResult.url) {
-        this.userAudioUrl = recResult.url;
-        const grid = this.container.querySelector('#dualPlaybackGrid');
-        if (grid) grid.style.display = 'grid';
+
+      if (!this._isMobileSession) {
+        const recResult = await audioRecorder.stopRecording();
+        if (recResult && recResult.url) {
+          this.userAudioUrl = recResult.url;
+          const grid = this.container.querySelector('#dualPlaybackGrid');
+          if (grid) grid.style.display = 'grid';
+        }
+      }
+
+      const spoken = (this._capturedSpoken || '').trim();
+      if (spoken.length > 0) {
+        this.evaluateShadow(spoken);
       }
       return;
     }
 
     // Start recording
-    const isDe = this.currentLang === 'de';
     this.isRecording = true;
+    this._shadowStoppedByUser = false;
+    this._capturedSpoken = '';
     btn.classList.add('recording');
     textSpan.textContent = isDe ? 'Aufnahme stoppen...' : 'Stop Recording';
     this.userAudioUrl = null;
 
-    try {
-      await audioRecorder.startRecording(canvas);
-    } catch (e) {
-      alert(isDe 
-        ? 'Mikrofonzugriff ist für das Shadowing erforderlich. Bitte erlauben Sie den Zugriff im Browser.' 
-        : 'Microphone permission required for shadowing practice.');
-      this.isRecording = false;
-      btn.classList.remove('recording');
-      textSpan.textContent = isDe ? 'Shadowing aufnehmen' : 'Record Your Shadow';
-      return;
+    // Detect mobile / touch devices where concurrent getUserMedia + SpeechRecognition collides
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+      || (window.matchMedia && window.matchMedia('(max-width: 768px)').matches && 'ontouchstart' in window);
+    this._isMobileSession = isMobile;
+
+    if (isMobile) {
+      // On mobile, run simulated waveform to keep the microphone free for SpeechRecognition
+      this.startWaveform(canvas);
+    } else {
+      try {
+        await audioRecorder.startRecording(canvas);
+      } catch (e) {
+        alert(isDe 
+          ? 'Mikrofonzugriff ist für das Shadowing erforderlich. Bitte erlauben Sie den Zugriff im Browser.' 
+          : 'Microphone permission required for shadowing practice.');
+        this.isRecording = false;
+        btn.classList.remove('recording');
+        textSpan.textContent = isDe ? 'Shadowing aufnehmen' : 'Record Your Shadow';
+        return;
+      }
     }
 
-    let capturedSpoken = '';
     speechService.startListening({
       lang: speechService.getDefaultRecognitionLang(),
       continuous: true,
       interimResults: true,
       onInterim: ({ full }) => {
-        capturedSpoken = full;
+        this._capturedSpoken = full;
       },
       onResult: (finalText) => {
-        const spoken = finalText || capturedSpoken;
+        const spoken = finalText || this._capturedSpoken;
         if (spoken && spoken.trim().length > 0) {
           this.evaluateShadow(spoken);
         }
       },
-      onError: () => {
+      onError: (err) => {
+        console.warn('Shadowing speech recognition error:', err);
+        const errType = err && (err.error || err.message);
+        if (errType === 'no-speech') {
+          return;
+        }
         this.isRecording = false;
         btn.classList.remove('recording');
         textSpan.textContent = isDe ? 'Shadowing aufnehmen' : 'Record Your Shadow';
-        audioRecorder.stopRecording();
+        this.stopWaveform(canvas);
+        if (!this._isMobileSession) {
+          audioRecorder.stopRecording();
+        }
       },
       onEnd: () => {
-        this.isRecording = false;
-        btn.classList.remove('recording');
-        textSpan.textContent = isDe ? 'Shadowing aufnehmen' : 'Record Your Shadow';
+        if (this._shadowStoppedByUser) {
+          this._shadowStoppedByUser = false;
+          return;
+        }
+        // Auto-end by silence on mobile: if speech was captured, evaluate it
+        if (this.isRecording) {
+          this.isRecording = false;
+          btn.classList.remove('recording');
+          textSpan.textContent = isDe ? 'Shadowing aufnehmen' : 'Record Your Shadow';
+          this.stopWaveform(canvas);
+          if (!this._isMobileSession) {
+            audioRecorder.stopRecording();
+          }
+          const spoken = (this._capturedSpoken || '').trim();
+          if (spoken.length > 0) {
+            this.evaluateShadow(spoken);
+          }
+        }
       }
     });
   }

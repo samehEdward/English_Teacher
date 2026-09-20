@@ -868,6 +868,9 @@ export class VocationalModule {
         if (this.isListening) {
           speechService.stopListening();
           this.isListening = false;
+          if (customInput && customInput.value.trim()) {
+            this.activeSelectedPrompt = customInput.value.trim();
+          }
           micBtn.classList.remove('btn-danger', 'pulse');
           micBtn.innerHTML = '🎙️ Sprechen';
         } else {

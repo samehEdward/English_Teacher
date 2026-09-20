@@ -58,7 +58,11 @@ body {
     radial-gradient(circle at 15% 10%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
     radial-gradient(circle at 85% 80%, rgba(6, 182, 212, 0.12) 0%, transparent 40%),
     radial-gradient(circle at 50% 50%, rgba(217, 70, 239, 0.05) 0%, transparent 60%);
-  background-attachment: fixed;
+  /* background-attachment: fixed causes severe scroll jank on mobile WebViews
+     because the browser must repaint the full gradient on every scroll frame.
+     Use background-size instead for a visually equivalent fixed look. */
+  background-size: 100% 100vh;
+  background-repeat: no-repeat;
 }
 
 /* Glass panel utility */

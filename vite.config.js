@@ -34,9 +34,10 @@ function pwaFixPlugin() {
 
       // 3. Mirror dist to docs/ so GitHub Pages works whether deployed from branch or Actions
       if (fs.existsSync(distDir)) {
-        if (!fs.existsSync(docsDir)) {
-          fs.mkdirSync(docsDir, { recursive: true });
+        if (fs.existsSync(docsDir)) {
+          fs.rmSync(docsDir, { recursive: true, force: true });
         }
+        fs.mkdirSync(docsDir, { recursive: true });
         fs.cpSync(distDir, docsDir, { recursive: true });
       }
     }

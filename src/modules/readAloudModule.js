@@ -378,16 +378,21 @@ export class ReadAloudModule {
     const canvas = this.container.querySelector('#readWaveformCanvas');
 
     if (this.isRecording) {
-      // Stop recording and process — set flag so onResult/onEnd callbacks handle evaluation
+      // Stop recording and process
       this.isRecording = false;
-      this.pendingStopEval = true;
       micBtn.classList.remove('recording');
       micBtnText.textContent = isDe ? 'Sprechen starten' : 'Start Speaking';
       this.stopVisualizer(canvas);
 
-      // Stop speech recognition gracefully to flush remaining audio buffer.
-      // The onResult callback will fire if speech was captured; onEnd always fires last.
+      const captured = (this.spokenTranscript || '').trim();
       speechService.stopListening();
+
+      if (captured.length > 0) {
+        this.finishEvaluation(captured);
+      } else {
+        // If nothing captured yet, wait for onResult or onEnd to flush
+        this.pendingStopEval = true;
+      }
       return;
     }
 
@@ -401,22 +406,6 @@ export class ReadAloudModule {
     micBtn.classList.add('recording');
     micBtnText.textContent = isDe ? 'Stoppen & Auswerten' : 'Stop & Evaluate';
     interimSpan.textContent = isDe ? 'Höre zu... Jetzt sprechen.' : 'Listening... Speak now.';
-
-    // Check microphone permission and immediately release stream so SpeechRecognition has exclusive mic hardware access
-    try {
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach(track => track.stop());
-      }
-    } catch (e) {
-      alert(isDe 
-        ? 'Mikrofonzugriff ist erforderlich, um Ihre Sprache zu analysieren. Bitte erlauben Sie den Zugriff im Browser.' 
-        : 'Microphone access is required to analyze speaking. Please allow mic permission in your browser.');
-      this.isRecording = false;
-      micBtn.classList.remove('recording');
-      micBtnText.textContent = isDe ? 'Sprechen starten' : 'Start Speaking';
-      return;
-    }
 
     this.startVisualizer(canvas);
     this.pendingStopEval = false;
@@ -439,6 +428,11 @@ export class ReadAloudModule {
       onError: (err) => {
         console.warn('Speech recognition error:', err);
         const errType = err && (err.error || err.message);
+        if (errType === 'not-allowed' || errType === 'service-not-allowed') {
+          alert(isDe 
+            ? 'Mikrofonzugriff ist erforderlich, um Ihre Sprache zu analysieren. Bitte erlauben Sie den Zugriff im Browser.' 
+            : 'Microphone access is required to analyze speaking. Please allow mic permission in your browser.');
+        }
         if (errType === 'no-speech') {
           return;
         }

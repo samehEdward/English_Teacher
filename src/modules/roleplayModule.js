@@ -289,6 +289,7 @@ export class RoleplayModule {
 
     if (this.isListening) {
       this.isListening = false;
+      this._pendingRoleplayStop = true;
       btn.classList.remove('recording');
       btnText.textContent = isDe ? 'Antwort sprechen' : 'Speak Response';
       speechService.stopListening();
@@ -296,6 +297,7 @@ export class RoleplayModule {
     }
 
     this.isListening = true;
+    this._pendingRoleplayStop = false;
     btn.classList.add('recording');
     btnText.textContent = isDe ? 'Höre...' : 'Listening...';
     interimBox.textContent = isDe ? 'Höre zu... Bitte sprechen.' : 'Listening... Speak now.';
@@ -312,6 +314,7 @@ export class RoleplayModule {
         if (input) input.value = full;
       },
       onResult: (finalText) => {
+        this._pendingRoleplayStop = false;
         const spoken = finalText || spokenAccumulator;
         const input = this.container.querySelector('#roleplayCustomInput');
         if (input && spoken) input.value = spoken;
@@ -321,6 +324,25 @@ export class RoleplayModule {
         this.isListening = false;
         btn.classList.remove('recording');
         btnText.textContent = isDe ? 'Sprechen' : 'Speak';
+      },
+      onEnd: () => {
+        // Safety net: if stop was pressed but onResult never fired (mobile flush delay),
+        // fall back to the accumulated interim transcript
+        if (this._pendingRoleplayStop) {
+          this._pendingRoleplayStop = false;
+          const spoken = (spokenAccumulator || '').trim();
+          if (spoken.length > 0) {
+            const input = this.container.querySelector('#roleplayCustomInput');
+            if (input) input.value = spoken;
+            this.handleUserSpokenReply(spoken);
+          } else {
+            if (interimBox) {
+              interimBox.textContent = isDe 
+                ? 'Keine Sprache erkannt. Bitte tippen Sie eine Antwort oder wählen Sie eine Vorlage.' 
+                : 'No speech caught. Please type your response or select a suggested option.';
+            }
+          }
+        }
       }
     });
   }

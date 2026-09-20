@@ -123,6 +123,24 @@ export class PWAInstaller {
       });
     }
 
+    // Copy URL to clipboard
+    if (copyBtn) {
+      copyBtn.addEventListener('click', () => {
+        const urlDisplay = document.getElementById('mobileAppUrlDisplay');
+        const textToCopy = urlDisplay ? urlDisplay.textContent.trim() : this.httpsUrl;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(textToCopy).then(() => {
+            copyBtn.textContent = '✓';
+            setTimeout(() => { copyBtn.textContent = 'Kopieren'; }, 1500);
+          }).catch(() => {
+            this._fallbackCopy(textToCopy, copyBtn);
+          });
+        } else {
+          this._fallbackCopy(textToCopy, copyBtn);
+        }
+      });
+    }
+
     // Connection Mode Toggles
     const btnHttps = document.getElementById('btnSelectHttps');
     const btnLocal = document.getElementById('btnSelectLocal');
@@ -143,6 +161,25 @@ export class PWAInstaller {
         if (btnHttps) btnHttps.classList.remove('active');
         this.updateModalDisplay();
       });
+    }
+  }
+
+  _fallbackCopy(text, btn) {
+    try {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      if (btn) {
+        btn.textContent = '✓';
+        setTimeout(() => { btn.textContent = 'Kopieren'; }, 1500);
+      }
+    } catch (e) {
+      console.warn('Fallback copy failed:', e);
     }
   }
 }
