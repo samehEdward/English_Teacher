@@ -7,6 +7,9 @@ export class PWAInstaller {
     this.localIP = '192.168.0.84';
     this.port = window.location.port || '5174';
     this.phoneUrl = `http://${this.localIP}:${this.port}/`;
+    this.httpsUrl = 'https://ten-paths-travel.loca.lt';
+    this.tunnelPassword = '84.115.226.225';
+    this.activeUrlMode = 'https'; // 'https' or 'local'
 
     this.init();
   }
@@ -71,13 +74,18 @@ export class PWAInstaller {
     const modal = document.getElementById('mobileAppModal');
     if (!modal) return;
 
-    // Use current origin if not localhost, otherwise use Wi-Fi IP
-    let targetUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-      ? `http://${this.localIP}:${window.location.port || '5174'}/`
-      : window.location.href;
+    this.updateModalDisplay();
+    modal.classList.add('open');
+  }
 
+  updateModalDisplay() {
     const qrImg = document.getElementById('mobileQrCodeImg');
     const urlDisplay = document.getElementById('mobileAppUrlDisplay');
+    const tunnelPwdBadge = document.getElementById('mobileTunnelPwdBadge');
+
+    const targetUrl = this.activeUrlMode === 'https' 
+      ? this.httpsUrl 
+      : `http://${this.localIP}:${window.location.port || '5174'}/`;
 
     if (qrImg) {
       qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(targetUrl)}&bgcolor=0f172a&color=ffffff&margin=8`;
@@ -85,8 +93,9 @@ export class PWAInstaller {
     if (urlDisplay) {
       urlDisplay.textContent = targetUrl;
     }
-
-    modal.classList.add('open');
+    if (tunnelPwdBadge) {
+      tunnelPwdBadge.style.display = this.activeUrlMode === 'https' ? 'block' : 'none';
+    }
   }
 
   bindModalEvents() {
@@ -114,17 +123,25 @@ export class PWAInstaller {
       });
     }
 
-    if (copyBtn) {
-      copyBtn.addEventListener('click', () => {
-        const urlDisplay = document.getElementById('mobileAppUrlDisplay');
-        if (urlDisplay) {
-          navigator.clipboard.writeText(urlDisplay.textContent);
-          const original = copyBtn.innerHTML;
-          copyBtn.innerHTML = '✅ Kopiert!';
-          setTimeout(() => {
-            copyBtn.innerHTML = original;
-          }, 2000);
-        }
+    // Connection Mode Toggles
+    const btnHttps = document.getElementById('btnSelectHttps');
+    const btnLocal = document.getElementById('btnSelectLocal');
+
+    if (btnHttps) {
+      btnHttps.addEventListener('click', () => {
+        this.activeUrlMode = 'https';
+        btnHttps.classList.add('active');
+        if (btnLocal) btnLocal.classList.remove('active');
+        this.updateModalDisplay();
+      });
+    }
+
+    if (btnLocal) {
+      btnLocal.addEventListener('click', () => {
+        this.activeUrlMode = 'local';
+        btnLocal.classList.add('active');
+        if (btnHttps) btnHttps.classList.remove('active');
+        this.updateModalDisplay();
       });
     }
   }

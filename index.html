@@ -155,15 +155,30 @@
           Scannen Sie diesen QR-Code mit der <strong>Kamera Ihres Smartphones</strong> (WLAN muss verbunden sein) oder öffnen Sie den Link direkt im Handy-Browser:
         </p>
 
+        <!-- Connection Mode Toggle -->
+        <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 14px;">
+          <button class="btn btn-sm btn-secondary active" id="btnSelectHttps" style="font-size: 11px; padding: 6px 12px; border-radius: var(--radius-full);">
+            🌐 HTTPS Link (Empfohlen)
+          </button>
+          <button class="btn btn-sm btn-secondary" id="btnSelectLocal" style="font-size: 11px; padding: 6px 12px; border-radius: var(--radius-full);">
+            🏠 Lokales WLAN (IP)
+          </button>
+        </div>
+
         <!-- QR Code Display Box -->
-        <div style="background: #0f172a; padding: 14px; border-radius: 16px; display: inline-block; border: 2px solid rgba(99, 102, 241, 0.4); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); margin-bottom: 14px;">
+        <div style="background: #0f172a; padding: 14px; border-radius: 16px; display: inline-block; border: 2px solid rgba(99, 102, 241, 0.4); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); margin-bottom: 12px;">
           <img id="mobileQrCodeImg" src="" alt="Scan QR Code to open on smartphone" width="200" height="200" style="display: block; border-radius: 8px;" />
         </div>
 
         <!-- Direct Link Box with Copy Button -->
-        <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border-glass); border-radius: 8px; padding: 8px 12px; margin-bottom: 18px; gap: 8px;">
-          <span id="mobileAppUrlDisplay" style="font-family: monospace; font-size: 13px; color: #38bdf8; word-break: break-all;">http://192.168.0.84:5174/</span>
+        <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border-glass); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; gap: 8px;">
+          <span id="mobileAppUrlDisplay" style="font-family: monospace; font-size: 13px; color: #38bdf8; word-break: break-all;">https://ten-paths-travel.loca.lt</span>
           <button id="copyPhoneUrlBtn" class="btn btn-secondary btn-sm" style="padding: 4px 10px; font-size: 12px;">Kopieren</button>
+        </div>
+
+        <!-- Tunnel Password Hint -->
+        <div id="mobileTunnelPwdBadge" style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; font-size: 12px; color: #fde68a; text-align: left;">
+          🔑 <strong>Passwort-Hinweis:</strong> Falls der Browser beim ersten Öffnen nach einem <em>„Tunnel Password“</em> fragt, geben Sie einfach: <code style="background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 4px; font-weight: 700; color: #fff;">84.115.226.225</code> ein und tippen Sie auf <strong>Click to Submit</strong>.
         </div>
 
         <!-- 3-Step Install Guide -->
