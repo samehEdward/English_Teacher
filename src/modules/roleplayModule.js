@@ -1,5 +1,6 @@
 // Situational Dialogue & Conversational Roleplay Module
 import { ROLEPLAY_SCENARIOS } from '../data/lessonsData.js';
+import { GERMAN_ROLEPLAY_SCENARIOS } from '../data/lessonsData_de.js';
 import { speechService } from '../services/speechService.js';
 import { audioRecorder } from '../services/audioRecorder.js';
 import { DiffEngine } from '../services/diffEngine.js';
@@ -9,13 +10,29 @@ import confetti from 'canvas-confetti';
 export class RoleplayModule {
   constructor(container) {
     this.container = container;
-    this.scenarios = ROLEPLAY_SCENARIOS;
+    this.currentLang = storageService.getLanguage();
+    this.loadScenarios();
     this.currentScenarioIdx = 0;
     this.currentStepIdx = 0;
     this.chatHistory = [];
     this.isListening = false;
     this.activeSelectedPrompt = '';
 
+    this.initScenario();
+    this.render();
+    this.bindEvents();
+  }
+
+  loadScenarios() {
+    this.scenarios = this.currentLang === 'de' ? GERMAN_ROLEPLAY_SCENARIOS : ROLEPLAY_SCENARIOS;
+  }
+
+  setLanguage(lang) {
+    this.currentLang = lang;
+    this.loadScenarios();
+    this.currentScenarioIdx = 0;
+    this.currentStepIdx = 0;
+    this.activeSelectedPrompt = '';
     this.initScenario();
     this.render();
     this.bindEvents();
@@ -49,6 +66,7 @@ export class RoleplayModule {
   }
 
   render() {
+    const isDe = this.currentLang === 'de';
     const scenario = this.getCurrentScenario();
     const step = this.getCurrentStep();
     const isCompleted = this.currentStepIdx >= scenario.steps.length;
@@ -56,8 +74,8 @@ export class RoleplayModule {
     this.container.innerHTML = `
       <div class="section-header">
         <div class="section-title-wrap">
-          <h2 class="section-title">Conversational Roleplay Studio</h2>
-          <p class="section-subtitle">Simulate real-life spoken English interactions with conversational AI partners.</p>
+          <h2 class="section-title">${isDe ? 'Konversations- & Rollenspiel-Studio' : 'Conversational Roleplay Studio'}</h2>
+          <p class="section-subtitle">${isDe ? 'Reale deutsche Gesprächssituationen mit interaktiven KI-Partnern simulieren.' : 'Simulate real-life spoken English interactions with conversational AI partners.'}</p>
         </div>
         <div class="section-actions">
           <select id="roleplaySelect" class="btn btn-secondary btn-sm" style="background: rgba(20,28,48,0.9); color: white;">
@@ -68,7 +86,7 @@ export class RoleplayModule {
             `).join('')}
           </select>
           <button id="restartScenarioBtn" class="btn btn-secondary btn-sm">
-            Restart
+            ${isDe ? 'Neustart' : 'Restart'}
           </button>
         </div>
       </div>
@@ -84,7 +102,7 @@ export class RoleplayModule {
                 <div style="font-size: 13px; color: var(--text-muted);">${scenario.context}</div>
               </div>
             </div>
-            <span class="badge badge-level">Step ${Math.min(this.currentStepIdx + 1, scenario.steps.length)} / ${scenario.steps.length}</span>
+            <span class="badge badge-level">${isDe ? 'Schritt' : 'Step'} ${Math.min(this.currentStepIdx + 1, scenario.steps.length)} / ${scenario.steps.length}</span>
           </div>
 
           <!-- Chat messages stream -->
@@ -97,7 +115,7 @@ export class RoleplayModule {
                   <div>${msg.text}</div>
                   ${msg.sender === 'ai' ? `
                     <button class="btn btn-secondary btn-sm replay-ai-speech" data-text="${encodeURIComponent(msg.text)}" style="margin-top: 8px; font-size: 11px; padding: 3px 8px;">
-                      🔊 Listen
+                      ${isDe ? '🔊 Anhören' : '🔊 Listen'}
                     </button>
                   ` : ''}
                 </div>
@@ -108,7 +126,7 @@ export class RoleplayModule {
           <!-- User Reply Area -->
           ${!isCompleted && step ? `
             <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 10px; border-top: 1px solid var(--border-glass); padding-top: 16px;">
-              <div style="font-size: 13px; font-weight: 600; color: #cbd5e1;">Suggested Responses (Click to select & speak):</div>
+              <div style="font-size: 13px; font-weight: 600; color: #cbd5e1;">${isDe ? 'Vorgeschlagene Antworten (Klicken zum Auswählen):' : 'Suggested Responses (Click to select & speak):'}</div>
               <div style="display: flex; flex-direction: column; gap: 8px;">
                 ${step.suggestedResponses.map((resp, i) => `
                   <div class="suggested-reply-card ${this.activeSelectedPrompt === resp ? 'active-prompt' : ''}" data-text="${encodeURIComponent(resp)}">
@@ -123,22 +141,24 @@ export class RoleplayModule {
               <!-- Speaking Trigger -->
               <div class="control-bar" style="margin-top: 8px;">
                 <div style="font-size: 13px; color: var(--text-muted);" id="roleplayInterim">
-                  ${this.activeSelectedPrompt ? 'Selected line ready. Press Speak to respond.' : 'Choose a line above or speak freely...'}
+                  ${this.activeSelectedPrompt 
+                    ? (isDe ? 'Ausgewählter Satz bereit. Drücken Sie "Antwort sprechen".' : 'Selected line ready. Press Speak to respond.') 
+                    : (isDe ? 'Wählen Sie oben einen Satz oder sprechen Sie frei...' : 'Choose a line above or speak freely...')}
                 </div>
                 <button id="roleplayMicBtn" class="mic-action-btn">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
-                  <span id="roleplayMicText">Speak Response</span>
+                  <span id="roleplayMicText">${isDe ? 'Antwort sprechen' : 'Speak Response'}</span>
                 </button>
               </div>
             </div>
           ` : `
             <div style="text-align: center; padding: 30px; background: rgba(16, 185, 129, 0.1); border-radius: var(--radius-md); border: 1px solid rgba(16, 185, 129, 0.3);">
-              <h3 style="font-size: 20px; font-weight: 700; color: #34d399; margin-bottom: 8px;">🎉 Dialogue Successfully Completed!</h3>
+              <h3 style="font-size: 20px; font-weight: 700; color: #34d399; margin-bottom: 8px;">🎉 ${isDe ? 'Dialog erfolgreich abgeschlossen!' : 'Dialogue Successfully Completed!'}</h3>
               <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 16px;">
-                You navigated this conversation naturally and expressed your points with clarity.
+                ${isDe ? 'Sie haben das Gespräch souverän geführt und Ihre Gedanken präzise ausgedrückt.' : 'You navigated this conversation naturally and expressed your points with clarity.'}
               </p>
               <button id="restartCompletedBtn" class="btn btn-primary">
-                Practice Again
+                ${isDe ? 'Nochmal üben' : 'Practice Again'}
               </button>
             </div>
           `}
@@ -147,17 +167,17 @@ export class RoleplayModule {
         <!-- Right Dialogue Coach Guide -->
         <div style="display: flex; flex-direction: column; gap: 20px;">
           <div class="glass-panel" style="padding: 24px;">
-            <h4 style="font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 10px;">Conversation Strategy</h4>
+            <h4 style="font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 10px;">${isDe ? 'Gesprächsstrategie' : 'Conversation Strategy'}</h4>
             <ul style="font-size: 13px; color: var(--text-muted); line-height: 1.8; padding-left: 18px;">
-              <li>Maintain steady vocal pace and do not rush through pauses.</li>
-              <li>Acknowledge the other speaker before answering (e.g. <em>"Thank you"</em>, <em>"That is a great question"</em>).</li>
-              <li>Speak clearly toward your microphone.</li>
+              <li>${isDe ? 'Halten Sie ein gleichmäßiges Sprechtempo und nutzen Sie gezielte Pausen.' : 'Maintain steady vocal pace and do not rush through pauses.'}</li>
+              <li>${isDe ? 'Bestätigen Sie das Gehörte vor der Antwort (z.B. "Vielen Dank", "Das ist ein wichtiger Punkt").' : 'Acknowledge the other speaker before answering (e.g. <em>"Thank you"</em>, <em>"That is a great question"</em>).'}</li>
+              <li>${isDe ? 'Sprechen Sie deutlich in Richtung Ihres Mikrofons.' : 'Speak clearly toward your microphone.'}</li>
             </ul>
           </div>
 
           ${step ? `
             <div class="glass-panel" style="padding: 20px;">
-              <h5 style="font-size: 14px; font-weight: 700; color: #cbd5e1; margin-bottom: 8px;">Target Vocabulary & Keywords:</h5>
+              <h5 style="font-size: 14px; font-weight: 700; color: #cbd5e1; margin-bottom: 8px;">${isDe ? 'Wichtiger Wortschatz & Schlüsselwörter:' : 'Target Vocabulary & Keywords:'}</h5>
               <div style="display: flex; flex-wrap: wrap; gap: 6px;">
                 ${step.targetKeywords.map(kw => `
                   <span class="badge badge-cat">${kw}</span>
@@ -240,6 +260,7 @@ export class RoleplayModule {
   }
 
   toggleRoleplaySpeaking() {
+    const isDe = this.currentLang === 'de';
     const btn = this.container.querySelector('#roleplayMicBtn');
     const btnText = this.container.querySelector('#roleplayMicText');
     const interimBox = this.container.querySelector('#roleplayInterim');
@@ -247,18 +268,19 @@ export class RoleplayModule {
     if (this.isListening) {
       this.isListening = false;
       btn.classList.remove('recording');
-      btnText.textContent = 'Speak Response';
+      btnText.textContent = isDe ? 'Antwort sprechen' : 'Speak Response';
       speechService.stopListening();
       return;
     }
 
     this.isListening = true;
     btn.classList.add('recording');
-    btnText.textContent = 'Listening... Speak now';
-    interimBox.textContent = 'Listening... Speak your reply aloud.';
+    btnText.textContent = isDe ? 'Höre zu... Jetzt antworten' : 'Listening... Speak now';
+    interimBox.textContent = isDe ? 'Höre zu... Bitte laut antworten.' : 'Listening... Speak your reply aloud.';
 
     let spokenAccumulator = '';
     speechService.startListening({
+      lang: speechService.getDefaultRecognitionLang(),
       continuous: true,
       interimResults: true,
       onInterim: ({ full }) => {
@@ -272,24 +294,25 @@ export class RoleplayModule {
       onError: () => {
         this.isListening = false;
         btn.classList.remove('recording');
-        btnText.textContent = 'Speak Response';
+        btnText.textContent = isDe ? 'Antwort sprechen' : 'Speak Response';
       }
     });
   }
 
   handleUserSpokenReply(spoken) {
+    const isDe = this.currentLang === 'de';
     this.isListening = false;
     const btn = this.container.querySelector('#roleplayMicBtn');
     const btnText = this.container.querySelector('#roleplayMicText');
     if (btn) btn.classList.remove('recording');
-    if (btnText) btnText.textContent = 'Speak Response';
+    if (btnText) btnText.textContent = isDe ? 'Antwort sprechen' : 'Speak Response';
 
-    const cleanSpoken = spoken.trim() || this.activeSelectedPrompt || 'I understand.';
+    const cleanSpoken = spoken.trim() || this.activeSelectedPrompt || (isDe ? 'Ich verstehe.' : 'I understand.');
 
     // Push user message
     this.chatHistory.push({
       sender: 'user',
-      speaker: 'You',
+      speaker: isDe ? 'Sie' : 'You',
       avatar: '🗣️',
       text: cleanSpoken
     });

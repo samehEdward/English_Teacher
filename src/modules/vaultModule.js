@@ -6,13 +6,21 @@ import { audioRecorder } from '../services/audioRecorder.js';
 export class VaultModule {
   constructor(container) {
     this.container = container;
+    this.currentLang = storageService.getLanguage();
     this.searchQuery = '';
 
     this.render();
     this.bindEvents();
   }
 
+  setLanguage(lang) {
+    this.currentLang = lang;
+    this.render();
+    this.bindEvents();
+  }
+
   render() {
+    const isDe = this.currentLang === 'de';
     const stats = storageService.getStats();
     const streak = storageService.getStreak();
     let vault = storageService.getVault();
@@ -28,8 +36,8 @@ export class VaultModule {
     this.container.innerHTML = `
       <div class="section-header">
         <div class="section-title-wrap">
-          <h2 class="section-title">Vocabulary Vault & Learning Analytics</h2>
-          <p class="section-subtitle">Track your fluency milestones and review your personal bank of target vocabulary.</p>
+          <h2 class="section-title">${isDe ? 'Wortschatz-Tresor & Lernanalysen' : 'Vocabulary Vault & Learning Analytics'}</h2>
+          <p class="section-subtitle">${isDe ? 'Verfolgen Sie Ihre Meilensteine und wiederholen Sie Ihren persönlichen Wortschatz.' : 'Track your fluency milestones and review your personal bank of target vocabulary.'}</p>
         </div>
       </div>
 
@@ -40,8 +48,8 @@ export class VaultModule {
             🔥
           </div>
           <div>
-            <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">ACTIVE STREAK</div>
-            <div style="font-size: 24px; font-weight: 800; color: #fcd34d;">${streak.currentStreak} Day${streak.currentStreak === 1 ? '' : 's'}</div>
+            <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">${isDe ? 'AKTIVE SERIE' : 'ACTIVE STREAK'}</div>
+            <div style="font-size: 24px; font-weight: 800; color: #fcd34d;">${streak.currentStreak} ${isDe ? (streak.currentStreak === 1 ? 'Tag' : 'Tage') : (streak.currentStreak === 1 ? 'Day' : 'Days')}</div>
           </div>
         </div>
 
@@ -50,7 +58,7 @@ export class VaultModule {
             🗣️
           </div>
           <div>
-            <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">WORDS SPOKEN</div>
+            <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">${isDe ? 'GESPROCHENE WÖRTER' : 'WORDS SPOKEN'}</div>
             <div style="font-size: 24px; font-weight: 800; color: #a5b4fc;">${stats.wordsSpoken}</div>
           </div>
         </div>
@@ -60,7 +68,7 @@ export class VaultModule {
             🎯
           </div>
           <div>
-            <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">AVG ACCURACY</div>
+            <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">${isDe ? 'DURCHSCHN. GENAUIGKEIT' : 'AVG ACCURACY'}</div>
             <div style="font-size: 24px; font-weight: 800; color: #34d399;">${stats.avgAccuracy}%</div>
           </div>
         </div>
@@ -70,7 +78,7 @@ export class VaultModule {
             ⏱️
           </div>
           <div>
-            <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">PRACTICE TIME</div>
+            <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">${isDe ? 'ÜBUNGSZEIT' : 'PRACTICE TIME'}</div>
             <div style="font-size: 24px; font-weight: 800; color: #38bdf8;">${stats.practiceMinutes} min</div>
           </div>
         </div>
@@ -80,27 +88,27 @@ export class VaultModule {
       <div class="practice-card glass-panel">
         <div class="card-header-bar">
           <div style="display: flex; align-items: center; gap: 12px;">
-            <h3 style="font-size: 18px; font-weight: 700; color: #fff;">Saved Vocabulary (${vault.length})</h3>
+            <h3 style="font-size: 18px; font-weight: 700; color: #fff;">${isDe ? 'Gespeicherter Wortschatz' : 'Saved Vocabulary'} (${vault.length})</h3>
           </div>
           <div style="display: flex; gap: 10px;">
-            <input type="text" id="vaultSearchInput" class="form-input" placeholder="Search words or definitions..." value="${this.searchQuery}" style="width: 240px; padding: 8px 12px; font-size: 13px;">
+            <input type="text" id="vaultSearchInput" class="form-input" placeholder="${isDe ? 'Wörter oder Bedeutungen suchen...' : 'Search words or definitions...'}" value="${this.searchQuery}" style="width: 240px; padding: 8px 12px; font-size: 13px;">
             <button id="addNewWordBtn" class="btn btn-primary btn-sm">
-              + Add Word
+              ${isDe ? '+ Wort hinzufügen' : '+ Add Word'}
             </button>
           </div>
         </div>
 
         <!-- Quick Add Word Form (Hidden by default) -->
         <div id="quickAddWordBox" style="display: none; padding: 18px; border-radius: var(--radius-md); background: rgba(10, 15, 26, 0.85); border: 1px solid var(--border-active); margin-bottom: 12px;">
-          <h4 style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 10px;">Add New Word to Vault</h4>
+          <h4 style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 10px;">${isDe ? 'Neues Wort im Tresor speichern' : 'Add New Word to Vault'}</h4>
           <div style="display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 10px; margin-bottom: 10px;">
-            <input type="text" id="newWordInput" class="form-input" placeholder="Word (e.g. serendipity)">
-            <input type="text" id="newIpaInput" class="form-input" placeholder="Phonetics / IPA (optional)">
-            <input type="text" id="newDefInput" class="form-input" placeholder="Definition / Meaning">
+            <input type="text" id="newWordInput" class="form-input" placeholder="${isDe ? 'Wort (z.B. gemütlich)' : 'Word (e.g. serendipity)'}">
+            <input type="text" id="newIpaInput" class="form-input" placeholder="${isDe ? 'Lautschrift / IPA (optional)' : 'Phonetics / IPA (optional)'}">
+            <input type="text" id="newDefInput" class="form-input" placeholder="${isDe ? 'Bedeutung / Übersetzung' : 'Definition / Meaning'}">
           </div>
           <div style="display: flex; gap: 8px;">
-            <button id="saveNewWordConfirmBtn" class="btn btn-primary btn-sm">Save Word</button>
-            <button id="cancelNewWordBtn" class="btn btn-secondary btn-sm">Cancel</button>
+            <button id="saveNewWordConfirmBtn" class="btn btn-primary btn-sm">${isDe ? 'Speichern' : 'Save Word'}</button>
+            <button id="cancelNewWordBtn" class="btn btn-secondary btn-sm">${isDe ? 'Abbrechen' : 'Cancel'}</button>
           </div>
         </div>
 
@@ -110,11 +118,11 @@ export class VaultModule {
             <table class="vault-table">
               <thead>
                 <tr>
-                  <th>Word</th>
-                  <th>Phonetics (IPA)</th>
-                  <th>Definition</th>
-                  <th>Context / Note</th>
-                  <th style="text-align: right;">Action</th>
+                  <th>${isDe ? 'Wort' : 'Word'}</th>
+                  <th>${isDe ? 'Lautschrift (IPA)' : 'Phonetics (IPA)'}</th>
+                  <th>${isDe ? 'Bedeutung' : 'Definition'}</th>
+                  <th>${isDe ? 'Kontext / Notiz' : 'Context / Note'}</th>
+                  <th style="text-align: right;">${isDe ? 'Aktion' : 'Action'}</th>
                 </tr>
               </thead>
               <tbody>
@@ -134,10 +142,10 @@ export class VaultModule {
                     </td>
                     <td style="text-align: right;">
                       <div style="display: inline-flex; gap: 6px;">
-                        <button class="btn btn-accent btn-sm play-vault-word" data-word="${item.word}" title="Listen to pronunciation">
+                        <button class="btn btn-accent btn-sm play-vault-word" data-word="${item.word}" title="${isDe ? 'Aussprache anhören' : 'Listen to pronunciation'}">
                           🔊
                         </button>
-                        <button class="btn btn-secondary btn-sm delete-vault-word" data-word="${item.word}" title="Remove word" style="color: #f87171;">
+                        <button class="btn btn-secondary btn-sm delete-vault-word" data-word="${item.word}" title="${isDe ? 'Wort entfernen' : 'Remove word'}" style="color: #f87171;">
                           ✕
                         </button>
                       </div>
@@ -150,8 +158,8 @@ export class VaultModule {
         ` : `
           <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
             <div style="font-size: 32px; margin-bottom: 8px;">📖</div>
-            <h4 style="font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 4px;">No vocabulary saved yet</h4>
-            <p style="font-size: 13px;">Click on any word in the "Read & Speak Aloud" studio or add words manually above.</p>
+            <h4 style="font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 4px;">${isDe ? 'Noch keine Wörter gespeichert' : 'No vocabulary saved yet'}</h4>
+            <p style="font-size: 13px;">${isDe ? 'Klicken Sie auf ein Wort im Lesestudio oder fügen Sie oben manuell Wörter hinzu.' : 'Click on any word in the "Read & Speak Aloud" studio or add words manually above.'}</p>
           </div>
         `}
       </div>

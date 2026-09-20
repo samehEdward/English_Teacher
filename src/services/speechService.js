@@ -8,9 +8,23 @@ class SpeechService {
     this.currentUtterance = null;
     this.recognition = null;
     this.isListening = false;
+    this.currentLang = 'en'; // 'en' | 'de'
 
     this.initVoices();
     this.initRecognition();
+  }
+
+  setLanguage(lang = 'en') {
+    this.currentLang = lang;
+    this.initVoices();
+  }
+
+  getLanguage() {
+    return this.currentLang;
+  }
+
+  getDefaultRecognitionLang() {
+    return this.currentLang === 'de' ? 'de-DE' : 'en-US';
   }
 
   // ---- Text-to-Speech (TTS) ----
@@ -19,16 +33,27 @@ class SpeechService {
 
     const loadVoices = () => {
       const all = this.synth.getVoices();
-      // Filter for English voices
-      this.voices = all.filter(v => v.lang.startsWith('en'));
+      const prefix = this.currentLang === 'de' ? 'de' : 'en';
+      
+      // Filter for target language voices
+      this.voices = all.filter(v => v.lang.toLowerCase().startsWith(prefix));
       if (this.voices.length === 0) {
-        this.voices = all; // Fallback if language codes are unusual
+        this.voices = all; // Fallback if system language codes are unusual
       }
-      // Pick a great default voice: prefer US/UK natural or Google/Microsoft voices
-      const preferred = this.voices.find(v => 
-        (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Online')) &&
-        (v.lang.includes('en-US') || v.lang.includes('en-GB'))
-      ) || this.voices.find(v => v.lang.includes('en-US')) || this.voices[0];
+
+      // Pick a great default voice
+      let preferred = null;
+      if (this.currentLang === 'de') {
+        preferred = this.voices.find(v => 
+          (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Online') || v.name.includes('Katja') || v.name.includes('Hedda') || v.name.includes('Stefan')) &&
+          (v.lang.includes('de-DE') || v.lang.includes('de'))
+        ) || this.voices.find(v => v.lang.toLowerCase().includes('de')) || this.voices[0];
+      } else {
+        preferred = this.voices.find(v => 
+          (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Online')) &&
+          (v.lang.includes('en-US') || v.lang.includes('en-GB'))
+        ) || this.voices.find(v => v.lang.includes('en-US')) || this.voices[0];
+      }
 
       this.selectedVoice = preferred || null;
     };
@@ -62,7 +87,7 @@ class SpeechService {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = Math.max(0.5, Math.min(2.0, rate));
     utterance.pitch = Math.max(0.5, Math.min(1.5, pitch));
-    utterance.lang = this.selectedVoice ? this.selectedVoice.lang : 'en-US';
+    utterance.lang = this.selectedVoice ? this.selectedVoice.lang : this.getDefaultRecognitionLang();
 
     if (this.selectedVoice) {
       utterance.voice = this.selectedVoice;
@@ -119,7 +144,7 @@ class SpeechService {
   }
 
   startListening({
-    lang = 'en-US',
+    lang = null,
     continuous = true,
     interimResults = true,
     onStart = null,
@@ -137,7 +162,7 @@ class SpeechService {
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     this.recognition = new SpeechRecognition();
-    this.recognition.lang = lang;
+    this.recognition.lang = lang || this.getDefaultRecognitionLang();
     this.recognition.continuous = continuous;
     this.recognition.interimResults = interimResults;
     this.recognition.maxAlternatives = 1;

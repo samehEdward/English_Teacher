@@ -23,13 +23,25 @@
           <div>
             <div style="display: flex; align-items: center; gap: 8px;">
               <h1 class="brand-title">EchoSpeak</h1>
-              <span class="brand-badge">Local Studio</span>
+              <span class="brand-badge">Fluency Studio</span>
             </div>
-            <p style="font-size: 12px; color: var(--text-dim); margin-top: -2px;">Master Spoken English • 100% Browser Native</p>
+            <p id="brandSubtitle" style="font-size: 12px; color: var(--text-dim); margin-top: -2px;">Master Spoken Fluency • 100% Browser Native</p>
           </div>
         </div>
 
         <div class="header-controls">
+          <!-- Language Mode Switcher -->
+          <div class="lang-switcher" id="langSwitcher" title="Switch Target Learning Language">
+            <button class="lang-btn active" data-lang="en" id="btnLangEn" aria-label="Learn English">
+              <span class="lang-flag">🇬🇧</span>
+              <span>English</span>
+            </button>
+            <button class="lang-btn" data-lang="de" id="btnLangDe" aria-label="Deutsch lernen">
+              <span class="lang-flag">🇩🇪</span>
+              <span>Deutsch</span>
+            </button>
+          </div>
+
           <!-- Dynamic Streak & Words Chips -->
           <div class="stat-chip streak-active" id="headerStreakChip" title="Active practice streak">
             <span class="stat-icon">🔥</span>
@@ -42,10 +54,10 @@
           </div>
 
           <!-- Native Voice Accent Picker -->
-          <div class="voice-picker-group" title="Select browser synthesized English voice">
-            <label for="globalVoiceSelect">Voice:</label>
+          <div class="voice-picker-group" title="Select browser synthesized voice">
+            <label for="globalVoiceSelect" id="voiceSelectLabel">Voice:</label>
             <select id="globalVoiceSelect" class="voice-select">
-              <option value="">Default English Voice</option>
+              <option value="">Default Voice</option>
             </select>
           </div>
         </div>
@@ -53,25 +65,25 @@
 
       <!-- Navigation Tabs Bar -->
       <nav class="nav-tabs glass-panel" id="mainNavTabs" aria-label="Learning Pillars">
-        <button class="tab-btn active" data-target="readModule">
-          <span>📖 Read & Speak</span>
+        <button class="tab-btn active" data-target="readModule" id="navTabRead">
+          <span class="tab-label">📖 Read & Speak</span>
           <span class="tab-badge">Core</span>
         </button>
-        <button class="tab-btn" data-target="shadowModule">
-          <span>🎧 Shadowing Lab</span>
+        <button class="tab-btn" data-target="shadowModule" id="navTabShadow">
+          <span class="tab-label">🎧 Shadowing Lab</span>
           <span class="tab-badge">Echo</span>
         </button>
-        <button class="tab-btn" data-target="dictModule">
-          <span>✍️ Dictation Studio</span>
+        <button class="tab-btn" data-target="dictModule" id="navTabDict">
+          <span class="tab-label">✍️ Dictation Studio</span>
         </button>
-        <button class="tab-btn" data-target="roleplayModule">
-          <span>💬 Roleplay & Dialogue</span>
+        <button class="tab-btn" data-target="roleplayModule" id="navTabRoleplay">
+          <span class="tab-label">💬 Roleplay & Dialogue</span>
         </button>
-        <button class="tab-btn" data-target="phoneticsModule">
-          <span>🎯 Phonetics Gym</span>
+        <button class="tab-btn" data-target="phoneticsModule" id="navTabPhonetics">
+          <span class="tab-label">🎯 Phonetics Gym</span>
         </button>
-        <button class="tab-btn" data-target="vaultModule">
-          <span>📚 Vault & Stats</span>
+        <button class="tab-btn" data-target="vaultModule" id="navTabVault">
+          <span class="tab-label">📚 Vault & Stats</span>
         </button>
       </nav>
 
@@ -93,16 +105,16 @@
           <h3 id="modalTitle" style="font-size: 18px; font-weight: 700; color: #fff;">Import Your Custom Text</h3>
           <button id="closeModalBtn" class="modal-close-btn" aria-label="Close dialog">&times;</button>
         </div>
-        <p style="font-size: 13px; color: var(--text-muted);">
+        <p id="modalDesc" style="font-size: 13px; color: var(--text-muted);">
           Paste any news article, email, book excerpt, or speech. EchoSpeak will automatically enable word-by-word reading, audio pronunciation, and speech assessment.
         </p>
         <div class="form-group">
-          <label for="customTextTitleInput" style="font-size: 13px; font-weight: 600; color: #cbd5e1;">Article Title:</label>
+          <label for="customTextTitleInput" id="modalTitleLabel" style="font-size: 13px; font-weight: 600; color: #cbd5e1;">Article Title:</label>
           <input type="text" id="customTextTitleInput" class="form-input" placeholder="e.g. Technology News / My Presentation" />
         </div>
         <div class="form-group">
-          <label for="customTextareaInput" style="font-size: 13px; font-weight: 600; color: #cbd5e1;">English Text (Paragraph):</label>
-          <textarea id="customTextareaInput" class="form-textarea" placeholder="Paste your English paragraph here..."></textarea>
+          <label for="customTextareaInput" id="modalTextLabel" style="font-size: 13px; font-weight: 600; color: #cbd5e1;">Text (Paragraph):</label>
+          <textarea id="customTextareaInput" class="form-textarea" placeholder="Paste your paragraph here..."></textarea>
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 12px;">
           <button id="cancelModalBtn" class="btn btn-secondary">Cancel</button>

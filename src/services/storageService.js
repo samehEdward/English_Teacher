@@ -17,6 +17,7 @@ class StorageService {
   initDefaults() {
     if (!localStorage.getItem(STORAGE_KEYS.SETTINGS)) {
       this.saveSettings({
+        language: 'en',
         preferredVoice: '',
         speechRate: 1.0,
         pitch: 1.0,
@@ -163,11 +164,23 @@ class StorageService {
   // Settings
   getSettings() {
     const raw = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-    return raw ? JSON.parse(raw) : { speechRate: 1.0, pitch: 1.0 };
+    const defaults = { language: 'en', speechRate: 1.0, pitch: 1.0, preferredVoice: '', soundEffects: true };
+    return raw ? { ...defaults, ...JSON.parse(raw) } : defaults;
   }
 
   saveSettings(settings) {
-    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+    const current = this.getSettings();
+    const updated = { ...current, ...settings };
+    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(updated));
+    return updated;
+  }
+
+  getLanguage() {
+    return this.getSettings().language || 'en';
+  }
+
+  setLanguage(lang) {
+    return this.saveSettings({ language: lang });
   }
 }
 

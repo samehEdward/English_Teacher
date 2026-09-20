@@ -1,5 +1,6 @@
 // Phonetics & Tongue Twister Gym Module
 import { PHONETICS_DRILLS } from '../data/lessonsData.js';
+import { GERMAN_PHONETICS_DRILLS } from '../data/lessonsData_de.js';
 import { speechService } from '../services/speechService.js';
 import { audioRecorder } from '../services/audioRecorder.js';
 import { DiffEngine } from '../services/diffEngine.js';
@@ -9,6 +10,8 @@ import confetti from 'canvas-confetti';
 export class PhoneticsModule {
   constructor(container) {
     this.container = container;
+    this.currentLang = storageService.getLanguage();
+    this.loadDrills();
     this.activeTab = 'minimalPairs'; // 'minimalPairs' | 'twisters'
     this.selectedPairCategoryIdx = 0;
     this.activeTestingPair = null;
@@ -20,19 +23,34 @@ export class PhoneticsModule {
     this.bindEvents();
   }
 
+  loadDrills() {
+    this.drills = this.currentLang === 'de' ? GERMAN_PHONETICS_DRILLS : PHONETICS_DRILLS;
+  }
+
+  setLanguage(lang) {
+    this.currentLang = lang;
+    this.loadDrills();
+    this.selectedPairCategoryIdx = 0;
+    this.activeTwisterIdx = 0;
+    this.render();
+    this.bindEvents();
+  }
+
   render() {
+    const isDe = this.currentLang === 'de';
+
     this.container.innerHTML = `
       <div class="section-header">
         <div class="section-title-wrap">
-          <h2 class="section-title">Phonetics & Accent Gym</h2>
-          <p class="section-subtitle">Target tricky English sounds, master minimal pairs, and build vocal agility with tongue twisters.</p>
+          <h2 class="section-title">${isDe ? 'Phonetik- & Zungenbrecher-Gym' : 'Phonetics & Accent Gym'}</h2>
+          <p class="section-subtitle">${isDe ? 'Schwierige deutsche Laute trainieren, Minimalpaare meistern und Sprechmuskeln mit Zungenbrechern schulen.' : 'Target tricky English sounds, master minimal pairs, and build vocal agility with tongue twisters.'}</p>
         </div>
         <div class="section-actions">
           <button id="tabPairsBtn" class="btn ${this.activeTab === 'minimalPairs' ? 'btn-primary' : 'btn-secondary'} btn-sm">
-            Minimal Pairs
+            ${isDe ? 'Minimalpaare' : 'Minimal Pairs'}
           </button>
           <button id="tabTwistersBtn" class="btn ${this.activeTab === 'twisters' ? 'btn-primary' : 'btn-secondary'} btn-sm">
-            Tongue Twisters
+            ${isDe ? 'Zungenbrecher' : 'Tongue Twisters'}
           </button>
         </div>
       </div>
@@ -42,16 +60,17 @@ export class PhoneticsModule {
   }
 
   renderMinimalPairsView() {
-    const currentCategory = PHONETICS_DRILLS.minimalPairs[this.selectedPairCategoryIdx];
+    const isDe = this.currentLang === 'de';
+    const currentCategory = this.drills.minimalPairs[this.selectedPairCategoryIdx];
 
     return `
       <div class="studio-grid">
         <div class="practice-card glass-panel">
           <div class="card-header-bar">
             <select id="contrastSelect" class="btn btn-secondary btn-sm" style="background: rgba(20,28,48,0.9); color: white;">
-              ${PHONETICS_DRILLS.minimalPairs.map((cat, idx) => `
+              ${this.drills.minimalPairs.map((cat, idx) => `
                 <option value="${idx}" ${idx === this.selectedPairCategoryIdx ? 'selected' : ''}>
-                  Contrast: ${cat.contrast}
+                  ${isDe ? 'Kontrast' : 'Contrast'}: ${cat.contrast}
                 </option>
               `).join('')}
             </select>
@@ -59,7 +78,7 @@ export class PhoneticsModule {
 
           <!-- Articulation Guide Tip -->
           <div style="padding: 16px 20px; border-radius: var(--radius-md); background: rgba(99, 102, 241, 0.12); border-left: 4px solid #6366f1;">
-            <div style="font-size: 14px; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">👅 Articulation Technique:</div>
+            <div style="font-size: 14px; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">👅 ${isDe ? 'Artikulationstechnik:' : 'Articulation Technique:'}</div>
             <div style="font-size: 14px; color: #e2e8f0;">${currentCategory.tip}</div>
           </div>
 
@@ -81,7 +100,7 @@ export class PhoneticsModule {
                   </button>
                 </div>
                 <button class="btn btn-accent btn-sm test-pair-btn" data-a="${pair.wordA}" data-b="${pair.wordB}" style="width: 100%;">
-                  🎙️ Pronunciation Test
+                  🎙️ ${isDe ? 'Aussprache-Test' : 'Pronunciation Test'}
                 </button>
               </div>
             `).join('')}
@@ -97,12 +116,12 @@ export class PhoneticsModule {
         <!-- Right Sound Anatomy Column -->
         <div style="display: flex; flex-direction: column; gap: 20px;">
           <div class="glass-panel" style="padding: 24px;">
-            <h4 style="font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 12px;">Why Minimal Pairs?</h4>
+            <h4 style="font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 12px;">${isDe ? 'Warum Minimalpaare?' : 'Why Minimal Pairs?'}</h4>
             <p style="font-size: 13px; color: var(--text-muted); line-height: 1.7;">
-              Minimal pairs are pairs of words that differ by only one single sound. Non-native speakers often substitute their native phonemes, leading to confusion.
+              ${isDe ? 'Minimalpaare sind Wortpaare, die sich durch nur einen einzigen Laut unterscheiden. Nicht-Muttersprachler verwechseln diese häufig mit Lauten ihrer Muttersprache.' : 'Minimal pairs are pairs of words that differ by only one single sound. Non-native speakers often substitute their native phonemes, leading to confusion.'}
             </p>
             <p style="font-size: 13px; color: var(--text-muted); line-height: 1.7; margin-top: 10px;">
-              By practicing contrasting pairs back-to-back, your ear attunes to the acoustic frequency and your vocal tract learns the exact muscular placement.
+              ${isDe ? 'Durch das direkte Üben gegensätzlicher Paare schärfen Sie Ihr Gehör für feine Frequenzen und trainieren die exakte Zungen- und Lippenhaltung.' : 'By practicing contrasting pairs back-to-back, your ear attunes to the acoustic frequency and your vocal tract learns the exact muscular placement.'}
             </p>
           </div>
         </div>
@@ -111,7 +130,8 @@ export class PhoneticsModule {
   }
 
   renderTwistersView() {
-    const twister = PHONETICS_DRILLS.tongueTwisters[this.activeTwisterIdx];
+    const isDe = this.currentLang === 'de';
+    const twister = this.drills.tongueTwisters[this.activeTwisterIdx];
 
     return `
       <div class="studio-grid">
@@ -122,7 +142,7 @@ export class PhoneticsModule {
               <span style="font-size: 14px; color: var(--text-muted);">${twister.targetSound}</span>
             </div>
             <select id="twisterSelect" class="btn btn-secondary btn-sm" style="background: rgba(20,28,48,0.9); color: white;">
-              ${PHONETICS_DRILLS.tongueTwisters.map((t, idx) => `
+              ${this.drills.tongueTwisters.map((t, idx) => `
                 <option value="${idx}" ${idx === this.activeTwisterIdx ? 'selected' : ''}>
                   ${t.title}
                 </option>
@@ -137,12 +157,12 @@ export class PhoneticsModule {
           <div class="control-bar">
             <button id="playTwisterBtn" class="btn btn-accent">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-              <span>Listen Demonstration</span>
+              <span>${isDe ? 'Demonstration anhören' : 'Listen Demonstration'}</span>
             </button>
 
             <button id="twisterRecordBtn" class="mic-action-btn">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
-              <span id="twisterRecordText">Start Speed Drill</span>
+              <span id="twisterRecordText">${isDe ? 'Tempo-Drill starten' : 'Start Speed Drill'}</span>
             </button>
           </div>
 
@@ -154,11 +174,11 @@ export class PhoneticsModule {
 
         <div style="display: flex; flex-direction: column; gap: 20px;">
           <div class="glass-panel" style="padding: 24px;">
-            <h4 style="font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 10px;">Speed Drill Rules</h4>
+            <h4 style="font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 10px;">${isDe ? 'Regeln für den Zungenbrecher-Drill' : 'Speed Drill Rules'}</h4>
             <ol style="font-size: 13px; color: var(--text-muted); line-height: 1.8; padding-left: 18px;">
-              <li>Start slow: focus on crisp consonant closure.</li>
-              <li>Gradually increase tempo while keeping your tongue loose.</li>
-              <li>Aim for 90%+ accuracy without stumbling over syllables.</li>
+              <li>${isDe ? 'Beginnen Sie langsam mit deutlicher Konsonantenbildung.' : 'Start slow: focus on crisp consonant closure.'}</li>
+              <li>${isDe ? 'Steigern Sie schrittweise das Tempo bei entspannter Zunge.' : 'Gradually increase tempo while keeping your tongue loose.'}</li>
+              <li>${isDe ? 'Zielen Sie auf 90%+ Treffergenauigkeit ab.' : 'Aim for 90%+ accuracy without stumbling over syllables.'}</li>
             </ol>
           </div>
         </div>
@@ -216,7 +236,7 @@ export class PhoneticsModule {
       const playBtn = this.container.querySelector('#playTwisterBtn');
       if (playBtn) {
         playBtn.addEventListener('click', () => {
-          const twister = PHONETICS_DRILLS.tongueTwisters[this.activeTwisterIdx];
+          const twister = this.drills.tongueTwisters[this.activeTwisterIdx];
           speechService.speak({ text: twister.text, rate: 0.9 });
         });
       }
@@ -231,15 +251,19 @@ export class PhoneticsModule {
   }
 
   startPairTest(wordA, wordB) {
+    const isDe = this.currentLang === 'de';
     const box = this.container.querySelector('#pairTestBox');
     const title = this.container.querySelector('#pairTestTitle');
     const result = this.container.querySelector('#pairTestResult');
 
     box.style.display = 'block';
-    title.textContent = `Say either "${wordA}" or "${wordB}" into the microphone:`;
-    result.textContent = 'Listening... Speak now!';
+    title.textContent = isDe 
+      ? `Sprechen Sie entweder "${wordA}" oder "${wordB}" deutlich ins Mikrofon:` 
+      : `Say either "${wordA}" or "${wordB}" into the microphone:`;
+    result.textContent = isDe ? 'Höre zu... Jetzt sprechen!' : 'Listening... Speak now!';
 
     speechService.startListening({
+      lang: speechService.getDefaultRecognitionLang(),
       continuous: false,
       interimResults: false,
       onResult: (spoken) => {
@@ -248,48 +272,52 @@ export class PhoneticsModule {
         const simB = DiffEngine.wordSimilarity(cleanSpoken, wordB);
 
         if (simA > simB && simA >= 0.7) {
-          result.textContent = `🎯 Detected: "${wordA}"! Clear articulation!`;
+          result.textContent = isDe ? `🎯 Erkannt: "${wordA}"! Sehr präzise Aussprache!` : `🎯 Detected: "${wordA}"! Clear articulation!`;
           result.style.color = '#34d399';
           audioRecorder.playChime('success');
         } else if (simB > simA && simB >= 0.7) {
-          result.textContent = `🎯 Detected: "${wordB}"! Clear articulation!`;
+          result.textContent = isDe ? `🎯 Erkannt: "${wordB}"! Sehr präzise Aussprache!` : `🎯 Detected: "${wordB}"! Clear articulation!`;
           result.style.color = '#34d399';
           audioRecorder.playChime('success');
         } else {
-          result.textContent = `Detected: "${cleanSpoken}". Try to distinguish the vowel or consonant more crisply.`;
+          result.textContent = isDe 
+            ? `Erkannt: "${cleanSpoken}". Betonen Sie den Unterschied zwischen "${wordA}" und "${wordB}" noch klarer.` 
+            : `Detected: "${cleanSpoken}". Try to distinguish the vowel or consonant more crisply.`;
           result.style.color = '#fbbf24';
           audioRecorder.playChime('tap');
         }
       },
       onError: () => {
-        result.textContent = 'Could not catch that clearly. Please try again.';
+        result.textContent = isDe ? 'Konnte leider nicht deutlich verstanden werden. Bitte erneut versuchen.' : 'Could not catch that clearly. Please try again.';
       }
     });
   }
 
   toggleTwisterRecord() {
+    const isDe = this.currentLang === 'de';
     const btn = this.container.querySelector('#twisterRecordBtn');
     const btnText = this.container.querySelector('#twisterRecordText');
     const feedback = this.container.querySelector('#twisterFeedback');
     const scoreText = this.container.querySelector('#twisterAccuracyScore');
     const spokenText = this.container.querySelector('#twisterSpokenResult');
-    const twister = PHONETICS_DRILLS.tongueTwisters[this.activeTwisterIdx];
+    const twister = this.drills.tongueTwisters[this.activeTwisterIdx];
 
     if (this.isRecordingTwister) {
       this.isRecordingTwister = false;
       btn.classList.remove('recording');
-      btnText.textContent = 'Start Speed Drill';
+      btnText.textContent = isDe ? 'Tempo-Drill starten' : 'Start Speed Drill';
       speechService.stopListening();
       return;
     }
 
     this.isRecordingTwister = true;
     btn.classList.add('recording');
-    btnText.textContent = 'Listening... Say Twister!';
+    btnText.textContent = isDe ? 'Höre zu... Zungenbrecher aufsagen!' : 'Listening... Say Twister!';
     feedback.style.display = 'none';
 
     let captured = '';
     speechService.startListening({
+      lang: speechService.getDefaultRecognitionLang(),
       continuous: true,
       interimResults: true,
       onInterim: ({ full }) => {
@@ -299,7 +327,7 @@ export class PhoneticsModule {
         const spoken = finalText || captured;
         this.isRecordingTwister = false;
         btn.classList.remove('recording');
-        btnText.textContent = 'Start Speed Drill';
+        btnText.textContent = isDe ? 'Tempo-Drill starten' : 'Start Speed Drill';
 
         const evalResult = DiffEngine.evaluateSpeech({
           referenceText: twister.text,
@@ -307,8 +335,8 @@ export class PhoneticsModule {
         });
 
         feedback.style.display = 'block';
-        scoreText.textContent = `Speed Drill Accuracy: ${evalResult.accuracy}% (${evalResult.wordsPerMinute} WPM)`;
-        spokenText.textContent = `Spoken: "${spoken}"`;
+        scoreText.textContent = `${isDe ? 'Tempo-Drill Genauigkeit' : 'Speed Drill Accuracy'}: ${evalResult.accuracy}% (${evalResult.wordsPerMinute} WPM)`;
+        spokenText.textContent = `${isDe ? 'Gesprochen' : 'Spoken'}: "${spoken}"`;
 
         if (evalResult.accuracy >= 80) {
           audioRecorder.playChime('success');
@@ -325,7 +353,7 @@ export class PhoneticsModule {
       onError: () => {
         this.isRecordingTwister = false;
         btn.classList.remove('recording');
-        btnText.textContent = 'Start Speed Drill';
+        btnText.textContent = isDe ? 'Tempo-Drill starten' : 'Start Speed Drill';
       }
     });
   }

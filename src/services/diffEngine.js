@@ -9,19 +9,19 @@ export class DiffEngine {
     return text
       .trim()
       .toLowerCase()
-      .replace(/[^\w\s']/g, ' ')
+      .replace(/[^\p{L}\p{N}\s']/gu, ' ')
       .split(/\s+/)
       .filter(w => w.length > 0);
   }
 
   /**
-   * Normalizes word for lenient comparison (handles common contractions and quotes)
+   * Normalizes word for lenient comparison (handles common contractions, quotes, and umlauts)
    */
   static normalizeWord(word) {
     return (word || '')
       .toLowerCase()
       .replace(/['’]/g, '')
-      .replace(/[^\w]/g, '')
+      .replace(/[^\p{L}\p{N}]/gu, '')
       .trim();
   }
 
