@@ -168,6 +168,7 @@ class SpeechService {
     this.recognition.maxAlternatives = 1;
 
     let finalTranscript = '';
+    let latestTranscript = '';
     let hadFatalError = false;
     let isAborted = false;
 
@@ -194,6 +195,7 @@ class SpeechService {
 
       finalTranscript = finalAccum;
       const combined = (finalAccum + (finalAccum && interimAccum ? ' ' : '') + interimAccum).trim();
+      latestTranscript = combined;
 
       if (onInterim) {
         onInterim({
@@ -208,16 +210,15 @@ class SpeechService {
       const errType = event.error || (event.message || 'unknown');
       console.warn('Speech recognition error event:', errType);
 
-      // 'aborted' is triggered when the user stops listening manually
+      // 'aborted' is triggered when session is explicitly cancelled
       if (errType === 'aborted') {
         isAborted = true;
         return;
       }
 
-      // 'no-speech' is non-fatal on mobile (e.g. user thought for a second before speaking)
+      // 'no-speech' is non-fatal on mobile (user paused or hesitated before speaking)
       if (errType === 'no-speech') {
         hadFatalError = false;
-        if (onError) onError(event);
         return;
       }
 
@@ -227,11 +228,12 @@ class SpeechService {
 
     this.recognition.onend = () => {
       this.isListening = false;
+      const captured = (finalTranscript || latestTranscript || '').trim();
       this.recognition = null;
 
       // Only invoke onResult when there was no fatal error, session wasn't aborted, and text was captured
-      if (!hadFatalError && !isAborted && finalTranscript.trim() && onResult) {
-        onResult(finalTranscript.trim());
+      if (!hadFatalError && !isAborted && captured && onResult) {
+        onResult(captured);
       }
 
       if (onEnd) onEnd();
@@ -247,16 +249,27 @@ class SpeechService {
   }
 
   stopListening() {
-    if (this.recognition) {
+    if (this.recognition && this.isListening) {
       try {
-        // abort() immediately shuts down recognition on mobile WebViews without waiting
-        this.recognition.abort();
+        // stop() flushes pending recorded audio and triggers the final result event
+        this.recognition.stop();
       } catch (e) {
         try {
-          this.recognition.stop();
+          this.recognition.abort();
         } catch (err) {
           // Ignore
         }
+      }
+    }
+    this.isListening = false;
+  }
+
+  abortListening() {
+    if (this.recognition) {
+      try {
+        this.recognition.abort();
+      } catch (e) {
+        // Ignore
       }
       this.recognition = null;
     }

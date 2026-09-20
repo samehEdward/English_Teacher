@@ -312,6 +312,64 @@ export class ReadAloudModule {
     });
   }
 
+  startVisualizer(canvas) {
+    if (!canvas) return;
+    this.stopVisualizer(canvas);
+    const ctx = canvas.getContext('2d');
+    let phase = 0;
+
+    const draw = () => {
+      if (!this.isRecording) {
+        this.stopVisualizer(canvas);
+        return;
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+      gradient.addColorStop(0, '#06b6d4');
+      gradient.addColorStop(0.5, '#6366f1');
+      gradient.addColorStop(1, '#ec4899');
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = gradient;
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = '#6366f1';
+      ctx.beginPath();
+
+      const width = canvas.width;
+      const height = canvas.height;
+      const midY = height / 2;
+      const amp = this.spokenTranscript ? 16 : 8;
+
+      for (let x = 0; x < width; x += 4) {
+        const y = midY + Math.sin((x * 0.04) + phase) * amp * Math.sin((x / width) * Math.PI);
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      phase += 0.12;
+      this.visualizerFrame = requestAnimationFrame(draw);
+    };
+
+    draw();
+  }
+
+  stopVisualizer(canvas) {
+    if (this.visualizerFrame) {
+      cancelAnimationFrame(this.visualizerFrame);
+      this.visualizerFrame = null;
+    }
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(99, 102, 241, 0.25)';
+      ctx.beginPath();
+      ctx.moveTo(0, canvas.height / 2);
+      ctx.lineTo(canvas.width, canvas.height / 2);
+      ctx.stroke();
+    }
+  }
+
   async toggleSpeaking() {
     const isDe = this.currentLang === 'de';
     const micBtn = this.container.querySelector('#micRecordBtn');
@@ -324,19 +382,26 @@ export class ReadAloudModule {
       this.isRecording = false;
       micBtn.classList.remove('recording');
       micBtnText.textContent = isDe ? 'Sprechen starten' : 'Start Speaking';
+      this.stopVisualizer(canvas);
+
+      // Stop speech recognition gracefully to flush remaining audio buffer
       speechService.stopListening();
-      await audioRecorder.stopRecording();
-      if (this.spokenTranscript && this.spokenTranscript.trim().length > 0) {
-        this.finishEvaluation(this.spokenTranscript);
-      } else {
-        interimSpan.textContent = isDe ? 'Aufnahme beendet. Keine Sprache erfasst.' : 'Recording stopped. No speech captured.';
-      }
+
+      setTimeout(() => {
+        const spoken = (this.spokenTranscript || '').trim();
+        if (spoken.length > 0) {
+          this.finishEvaluation(spoken);
+        } else {
+          interimSpan.textContent = isDe ? 'Aufnahme beendet. Keine Sprache erfasst.' : 'Recording stopped. No speech captured.';
+        }
+      }, 350);
       return;
     }
 
     // Start speaking
     speechService.stopSpeaking();
     this.resetHighlights();
+    this.hasEvaluated = false;
     this.isRecording = true;
     this.recordStartTime = Date.now();
     this.spokenTranscript = '';
@@ -344,8 +409,12 @@ export class ReadAloudModule {
     micBtnText.textContent = isDe ? 'Stoppen & Auswerten' : 'Stop & Evaluate';
     interimSpan.textContent = isDe ? 'Höre zu... Jetzt sprechen.' : 'Listening... Speak now.';
 
+    // Check microphone permission and immediately release stream so SpeechRecognition has exclusive mic hardware access
     try {
-      await audioRecorder.startRecording(canvas);
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(track => track.stop());
+      }
     } catch (e) {
       alert(isDe 
         ? 'Mikrofonzugriff ist erforderlich, um Ihre Sprache zu analysieren. Bitte erlauben Sie den Zugriff im Browser.' 
@@ -356,6 +425,8 @@ export class ReadAloudModule {
       return;
     }
 
+    this.startVisualizer(canvas);
+
     speechService.startListening({
       lang: speechService.getDefaultRecognitionLang(),
       continuous: true,
@@ -365,13 +436,17 @@ export class ReadAloudModule {
         interimSpan.textContent = full || (isDe ? 'Höre zu... Bitte deutlich sprechen.' : 'Listening... Speak clearly.');
       },
       onResult: (finalText) => {
-        const fullSpoken = finalText || this.spokenTranscript;
-        if (fullSpoken && fullSpoken.trim().length > 0) {
+        const fullSpoken = (finalText || this.spokenTranscript || '').trim();
+        if (fullSpoken.length > 0) {
           this.finishEvaluation(fullSpoken);
         }
       },
       onError: (err) => {
         console.warn('Speech recognition error:', err);
+        const errType = err && (err.error || err.message);
+        if (errType === 'no-speech') {
+          return;
+        }
         if (this.isRecording) {
           if (this.spokenTranscript && this.spokenTranscript.trim().length > 3) {
             this.finishEvaluation(this.spokenTranscript);
@@ -379,7 +454,7 @@ export class ReadAloudModule {
             this.isRecording = false;
             micBtn.classList.remove('recording');
             micBtnText.textContent = isDe ? 'Sprechen starten' : 'Start Speaking';
-            audioRecorder.stopRecording();
+            this.stopVisualizer(canvas);
             interimSpan.textContent = isDe 
               ? 'Keine Sprache erkannt oder Mikrofon unterbrochen. Bitte erneut auf "Sprechen starten" tippen.' 
               : 'No speech caught or microphone interrupted. Please tap "Start Speaking" again.';
@@ -390,12 +465,16 @@ export class ReadAloudModule {
   }
 
   finishEvaluation(spokenText) {
+    if (this.hasEvaluated) return;
+    this.hasEvaluated = true;
     const isDe = this.currentLang === 'de';
     this.isRecording = false;
     const micBtn = this.container.querySelector('#micRecordBtn');
     const micBtnText = this.container.querySelector('#micRecordBtnText');
-    micBtn.classList.remove('recording');
-    micBtnText.textContent = isDe ? 'Sprechen starten' : 'Start Speaking';
+    const canvas = this.container.querySelector('#readWaveformCanvas');
+    if (micBtn) micBtn.classList.remove('recording');
+    if (micBtnText) micBtnText.textContent = isDe ? 'Sprechen starten' : 'Start Speaking';
+    this.stopVisualizer(canvas);
 
     const durationSec = Math.max(1, (Date.now() - (this.recordStartTime || Date.now())) / 1000);
 
