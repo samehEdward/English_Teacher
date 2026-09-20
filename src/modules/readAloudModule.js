@@ -378,23 +378,16 @@ export class ReadAloudModule {
     const canvas = this.container.querySelector('#readWaveformCanvas');
 
     if (this.isRecording) {
-      // Stop recording and process
+      // Stop recording and process — set flag so onResult/onEnd callbacks handle evaluation
       this.isRecording = false;
+      this.pendingStopEval = true;
       micBtn.classList.remove('recording');
       micBtnText.textContent = isDe ? 'Sprechen starten' : 'Start Speaking';
       this.stopVisualizer(canvas);
 
-      // Stop speech recognition gracefully to flush remaining audio buffer
+      // Stop speech recognition gracefully to flush remaining audio buffer.
+      // The onResult callback will fire if speech was captured; onEnd always fires last.
       speechService.stopListening();
-
-      setTimeout(() => {
-        const spoken = (this.spokenTranscript || '').trim();
-        if (spoken.length > 0) {
-          this.finishEvaluation(spoken);
-        } else {
-          interimSpan.textContent = isDe ? 'Aufnahme beendet. Keine Sprache erfasst.' : 'Recording stopped. No speech captured.';
-        }
-      }, 350);
       return;
     }
 
@@ -426,6 +419,7 @@ export class ReadAloudModule {
     }
 
     this.startVisualizer(canvas);
+    this.pendingStopEval = false;
 
     speechService.startListening({
       lang: speechService.getDefaultRecognitionLang(),
@@ -436,6 +430,7 @@ export class ReadAloudModule {
         interimSpan.textContent = full || (isDe ? 'Höre zu... Bitte deutlich sprechen.' : 'Listening... Speak clearly.');
       },
       onResult: (finalText) => {
+        this.pendingStopEval = false;
         const fullSpoken = (finalText || this.spokenTranscript || '').trim();
         if (fullSpoken.length > 0) {
           this.finishEvaluation(fullSpoken);
@@ -458,6 +453,22 @@ export class ReadAloudModule {
             interimSpan.textContent = isDe 
               ? 'Keine Sprache erkannt oder Mikrofon unterbrochen. Bitte erneut auf "Sprechen starten" tippen.' 
               : 'No speech caught or microphone interrupted. Please tap "Start Speaking" again.';
+          }
+        }
+      },
+      onEnd: () => {
+        // Safety-net: fires after onResult (if any). If pendingStopEval is still true,
+        // it means stopListening was called but no final result was produced.
+        if (this.pendingStopEval) {
+          this.pendingStopEval = false;
+          // Last chance: check interim transcript accumulated during the session
+          const spoken = (this.spokenTranscript || '').trim();
+          if (spoken.length > 0) {
+            this.finishEvaluation(spoken);
+          } else {
+            interimSpan.textContent = isDe 
+              ? 'Aufnahme beendet. Keine Sprache erfasst.' 
+              : 'Recording stopped. No speech captured.';
           }
         }
       }
