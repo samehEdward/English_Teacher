@@ -139,16 +139,17 @@ export class RoleplayModule {
               </div>
 
               <!-- Custom Reply & Mic Input Bar -->
-              <div style="display: flex; gap: 10px; align-items: center; margin-top: 8px;">
-                <input type="text" id="roleplayCustomInput" class="form-input" style="flex: 1;" placeholder="${isDe ? 'Oder formulieren Sie Ihre eigene Antwort hier...' : 'Or type your own custom response here...'}" value="${this.activeSelectedPrompt || ''}" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off" />
+              <div class="chat-bottom-input-bar">
+                <input type="text" id="roleplayCustomInput" class="form-input" placeholder="${isDe ? 'Antwort eingeben...' : 'Type your reply...'}" value="${this.activeSelectedPrompt || ''}" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off" />
 
-                <button id="roleplayMicBtn" class="mic-action-btn ${this.isListening ? 'recording' : ''}" style="padding: 10px 18px; border-radius: var(--radius-md); font-size: 13px;">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
-                  <span id="roleplayMicText">${this.isListening ? (isDe ? 'Höre...' : 'Listening...') : (isDe ? 'Sprechen' : 'Speak')}</span>
+                <button id="roleplayMicBtn" class="mic-action-btn mobile-fab-mic ${this.isListening ? 'recording' : ''}" title="${isDe ? 'Sprechen' : 'Speak'}">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+                  <span id="roleplayMicText">${this.isListening ? (isDe ? 'Stop' : 'Stop') : (isDe ? 'Sprechen' : 'Speak')}</span>
                 </button>
 
-                <button id="roleplaySendBtn" class="btn btn-primary" style="padding: 10px 18px;">
-                  ${isDe ? 'Senden ↵' : 'Send ↵'}
+                <button id="roleplaySendBtn" class="btn btn-primary" title="${isDe ? 'Senden' : 'Send'}">
+                  <span class="btn-short-text">↵</span>
+                  <span class="btn-long-text">${isDe ? ' Senden' : ' Send'}</span>
                 </button>
               </div>
               <div style="font-size: 12px; color: var(--text-muted); min-height: 18px;" id="roleplayInterim"></div>
@@ -291,7 +292,7 @@ export class RoleplayModule {
       this.isListening = false;
       this._pendingRoleplayStop = true;
       btn.classList.remove('recording');
-      btnText.textContent = isDe ? 'Antwort sprechen' : 'Speak Response';
+      btnText.textContent = isDe ? 'Sprechen' : 'Speak';
       speechService.stopListening();
       return;
     }
@@ -299,7 +300,7 @@ export class RoleplayModule {
     this.isListening = true;
     this._pendingRoleplayStop = false;
     btn.classList.add('recording');
-    btnText.textContent = isDe ? 'Höre...' : 'Listening...';
+    btnText.textContent = isDe ? 'Stop' : 'Stop';
     interimBox.textContent = isDe ? 'Höre zu... Bitte sprechen.' : 'Listening... Speak now.';
 
     let spokenAccumulator = '';

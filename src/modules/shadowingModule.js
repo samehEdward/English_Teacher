@@ -97,25 +97,34 @@ export class ShadowingModule {
         <canvas id="shadowWaveformCanvas" class="waveform-canvas" width="600" height="70"></canvas>
 
         <!-- Action Controls -->
-        <div class="control-bar">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <button id="playNativeBtn" class="btn btn-accent">
+        <div class="control-bar mobile-app-bar">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button id="playNativeBtn" class="btn btn-accent" title="${isDe ? 'Nativ anhören (1.0x)' : 'Listen Native (1.0x)'}">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-              <span>${isDe ? 'Nativ anhören (1.0x)' : 'Listen Native (1.0x)'}</span>
+              <span>
+                <span class="btn-short-text">1.0x</span>
+                <span class="btn-long-text">${isDe ? ' Nativ' : ' Native'}</span>
+              </span>
             </button>
-            <button id="playSlowBtn" class="btn btn-secondary btn-sm" title="Listen at 0.75x">
-              🐢 0.75x
+            <button id="playSlowBtn" class="btn btn-secondary btn-sm" title="${isDe ? 'Langsam anhören (0.75x)' : 'Listen at 0.75x'}">
+              <span>🐢 0.75x</span>
             </button>
           </div>
 
-          <button id="shadowRecordBtn" class="mic-action-btn">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
-            <span id="shadowRecordText">${isDe ? 'Shadowing aufnehmen' : 'Record Your Shadow'}</span>
+          <button id="shadowRecordBtn" class="mic-action-btn mobile-fab-mic" title="${isDe ? 'Shadowing aufnehmen' : 'Record Your Shadow'}">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+            <span id="shadowRecordText">${isDe ? 'Shadow' : 'Shadow'}</span>
           </button>
 
-          <div style="display: flex; gap: 8px;">
-            <button id="prevSentenceBtn" class="btn btn-secondary btn-sm" ${this.currentSentenceIdx === 0 ? 'disabled' : ''}>${isDe ? '← Zurück' : '← Previous'}</button>
-            <button id="nextSentenceBtn" class="btn btn-secondary btn-sm" ${this.currentSentenceIdx === totalSentences - 1 ? 'disabled' : ''}>${isDe ? 'Weiter →' : 'Next →'}</button>
+          <div style="display: flex; gap: 6px;">
+            <button id="prevSentenceBtn" class="btn btn-secondary btn-sm" ${this.currentSentenceIdx === 0 ? 'disabled' : ''} title="${isDe ? 'Vorheriger Satz' : 'Previous sentence'}">
+              <span class="btn-short-text">←</span>
+              <span class="btn-long-text">${isDe ? ' Zurück' : ' Prev'}</span>
+            </button>
+            <button id="nextSentenceBtn" class="btn btn-secondary btn-sm" ${this.currentSentenceIdx === totalSentences - 1 ? 'disabled' : ''} title="${isDe ? 'Nächster Satz' : 'Next sentence'}">
+              <span class="btn-short-text">→</span>
+              <span class="btn-long-text">${isDe ? ' Weiter' : ' Next'}</span>
+            </button>
           </div>
         </div>
 
@@ -289,7 +298,7 @@ export class ShadowingModule {
       this.isRecording = false;
       this._shadowStoppedByUser = true;
       btn.classList.remove('recording');
-      textSpan.textContent = isDe ? 'Shadowing aufnehmen' : 'Record Your Shadow';
+      textSpan.textContent = isDe ? 'Shadow' : 'Shadow';
       this.stopWaveform(canvas);
       speechService.stopListening();
 
@@ -314,7 +323,7 @@ export class ShadowingModule {
     this._shadowStoppedByUser = false;
     this._capturedSpoken = '';
     btn.classList.add('recording');
-    textSpan.textContent = isDe ? 'Aufnahme stoppen...' : 'Stop Recording';
+    textSpan.textContent = isDe ? 'Stop' : 'Stop';
     this.userAudioUrl = null;
 
     // Detect mobile / touch devices where concurrent getUserMedia + SpeechRecognition collides
@@ -334,7 +343,7 @@ export class ShadowingModule {
           : 'Microphone permission required for shadowing practice.');
         this.isRecording = false;
         btn.classList.remove('recording');
-        textSpan.textContent = isDe ? 'Shadowing aufnehmen' : 'Record Your Shadow';
+        textSpan.textContent = isDe ? 'Shadow' : 'Shadow';
         return;
       }
     }
@@ -360,7 +369,7 @@ export class ShadowingModule {
         }
         this.isRecording = false;
         btn.classList.remove('recording');
-        textSpan.textContent = isDe ? 'Shadowing aufnehmen' : 'Record Your Shadow';
+        textSpan.textContent = isDe ? 'Shadow' : 'Shadow';
         this.stopWaveform(canvas);
         if (!this._isMobileSession) {
           audioRecorder.stopRecording();
@@ -375,7 +384,7 @@ export class ShadowingModule {
         if (this.isRecording) {
           this.isRecording = false;
           btn.classList.remove('recording');
-          textSpan.textContent = isDe ? 'Shadowing aufnehmen' : 'Record Your Shadow';
+          textSpan.textContent = isDe ? 'Shadow' : 'Shadow';
           this.stopWaveform(canvas);
           if (!this._isMobileSession) {
             audioRecorder.stopRecording();

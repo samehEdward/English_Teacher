@@ -294,15 +294,17 @@ export class VocationalModule {
               </div>
 
               <!-- Custom Text / Mic Input Bar -->
-              <div style="display: flex; gap: 10px; align-items: center;">
-                <input type="text" id="vocCustomReplyInput" class="form-input" style="flex: 1;" placeholder="${isDe ? 'Oder formulieren Sie Ihre eigene Antwort hier...' : 'Or type your own custom response here...'}" value="${this.activeSelectedPrompt || ''}" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off" />
+              <div class="chat-bottom-input-bar">
+                <input type="text" id="vocCustomReplyInput" class="form-input" placeholder="${isDe ? 'Antwort eingeben...' : 'Type reply...'}" value="${this.activeSelectedPrompt || ''}" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off" />
                 
-                <button id="vocMicBtn" class="btn ${this.isListening ? 'btn-danger pulse' : 'btn-secondary'}" style="padding: 10px 14px;" title="Speak with microphone">
-                  ${this.isListening ? '🔴 Höre...' : '🎙️ Sprechen'}
+                <button id="vocMicBtn" class="mic-action-btn mobile-fab-mic ${this.isListening ? 'recording' : ''}" title="${isDe ? 'Sprechen' : 'Speak'}">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+                  <span id="vocMicBtnText">${this.isListening ? (isDe ? 'Stop' : 'Stop') : (isDe ? 'Sprechen' : 'Speak')}</span>
                 </button>
 
-                <button id="vocSendReplyBtn" class="btn btn-primary" style="padding: 10px 18px;">
-                  ${isDe ? 'Senden ↵' : 'Send ↵'}
+                <button id="vocSendReplyBtn" class="btn btn-primary" title="${isDe ? 'Senden' : 'Send'}">
+                  <span class="btn-short-text">↵</span>
+                  <span class="btn-long-text">${isDe ? ' Senden' : ' Send'}</span>
                 </button>
               </div>
             </div>
@@ -864,15 +866,17 @@ export class VocationalModule {
     // Microphone speech recognition
     const micBtn = this.container.querySelector('#vocMicBtn');
     if (micBtn) {
+      const isDe = this.currentLang === 'de';
       micBtn.addEventListener('click', () => {
+        const textSpan = micBtn.querySelector('span');
         if (this.isListening) {
           speechService.stopListening();
           this.isListening = false;
           if (customInput && customInput.value.trim()) {
             this.activeSelectedPrompt = customInput.value.trim();
           }
-          micBtn.classList.remove('btn-danger', 'pulse');
-          micBtn.innerHTML = '🎙️ Sprechen';
+          micBtn.classList.remove('recording', 'btn-danger', 'pulse');
+          if (textSpan) textSpan.textContent = isDe ? 'Sprechen' : 'Speak';
         } else {
           speechService.startListening({
             onInterim: ({ full }) => {
@@ -885,22 +889,22 @@ export class VocationalModule {
             onEnd: () => {
               this.isListening = false;
               if (micBtn) {
-                micBtn.classList.remove('btn-danger', 'pulse');
-                micBtn.innerHTML = '🎙️ Sprechen';
+                micBtn.classList.remove('recording', 'btn-danger', 'pulse');
+                if (textSpan) textSpan.textContent = isDe ? 'Sprechen' : 'Speak';
               }
             },
             onError: (err) => {
               console.warn('SpeechRecognition error:', err);
               this.isListening = false;
               if (micBtn) {
-                micBtn.classList.remove('btn-danger', 'pulse');
-                micBtn.innerHTML = '🎙️ Sprechen';
+                micBtn.classList.remove('recording', 'btn-danger', 'pulse');
+                if (textSpan) textSpan.textContent = isDe ? 'Sprechen' : 'Speak';
               }
             }
           });
           this.isListening = true;
-          micBtn.classList.add('btn-danger', 'pulse');
-          micBtn.innerHTML = '🔴 Höre...';
+          micBtn.classList.add('recording');
+          if (textSpan) textSpan.textContent = isDe ? 'Stop' : 'Stop';
         }
       });
     }
@@ -924,8 +928,9 @@ export class VocationalModule {
       this.isListening = false;
       const micBtn = this.container.querySelector('#vocMicBtn');
       if (micBtn) {
-        micBtn.classList.remove('btn-danger', 'pulse');
-        micBtn.innerHTML = '🎙️ Sprechen';
+        micBtn.classList.remove('recording', 'btn-danger', 'pulse');
+        const textSpan = micBtn.querySelector('span');
+        if (textSpan) textSpan.textContent = this.currentLang === 'de' ? 'Sprechen' : 'Speak';
       }
     }
 

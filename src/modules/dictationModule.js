@@ -91,17 +91,26 @@ export class DictationModule {
           </div>
 
           <!-- Action Controls -->
-          <div class="control-bar">
-            <button id="checkWritingBtn" class="btn btn-primary">
+          <div class="control-bar mobile-app-bar">
+            <button id="checkWritingBtn" class="btn btn-primary" title="${isDe ? 'Rechtschreibung prüfen' : 'Check Writing'}">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span>${isDe ? 'Rechtschreibung prüfen' : 'Check Writing'}</span>
+              <span>
+                <span class="btn-short-text">${isDe ? 'Prüfen' : 'Check'}</span>
+                <span class="btn-long-text">${isDe ? ' (Rechtschreibung)' : ' Writing'}</span>
+              </span>
             </button>
-            <button id="revealAnswerBtn" class="btn btn-secondary btn-sm">
-              ${isDe ? 'Lösung anzeigen' : 'Show Solution'}
+            <button id="revealAnswerBtn" class="btn btn-secondary btn-sm" title="${isDe ? 'Lösung anzeigen' : 'Show Solution'}">
+              <span>${isDe ? 'Lösung' : 'Solution'}</span>
             </button>
-            <div style="display: flex; gap: 8px;">
-              <button id="prevDictBtn" class="btn btn-secondary btn-sm" ${this.currentIndex === 0 ? 'disabled' : ''}>${isDe ? '← Zurück' : '← Prev'}</button>
-              <button id="nextDictBtn" class="btn btn-secondary btn-sm" ${this.currentIndex === this.lessons.length - 1 ? 'disabled' : ''}>${isDe ? 'Weiter →' : 'Next →'}</button>
+            <div style="display: flex; gap: 6px;">
+              <button id="prevDictBtn" class="btn btn-secondary btn-sm" ${this.currentIndex === 0 ? 'disabled' : ''} title="${isDe ? 'Vorheriger Satz' : 'Previous sentence'}">
+                <span class="btn-short-text">←</span>
+                <span class="btn-long-text">${isDe ? ' Zurück' : ' Prev'}</span>
+              </button>
+              <button id="nextDictBtn" class="btn btn-secondary btn-sm" ${this.currentIndex === this.lessons.length - 1 ? 'disabled' : ''} title="${isDe ? 'Nächster Satz' : 'Next sentence'}">
+                <span class="btn-short-text">→</span>
+                <span class="btn-long-text">${isDe ? ' Weiter' : ' Next'}</span>
+              </button>
             </div>
           </div>
 
@@ -126,7 +135,7 @@ export class DictationModule {
 
             <button id="speakVerifyBtn" class="mic-action-btn" style="width: 100%; justify-content: center;">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
-              <span id="speakVerifyBtnText">${isDe ? 'Jetzt laut sprechen' : 'Speak Aloud Now'}</span>
+              <span id="speakVerifyBtnText">${isDe ? 'Sprechen' : 'Speak'}</span>
             </button>
 
             <div id="speakVerifyFeedback" style="display: none; padding: 12px; border-radius: var(--radius-sm); font-size: 13px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border-glass);">
@@ -267,14 +276,14 @@ export class DictationModule {
     if (this.isSpeakingVerification) {
       this.isSpeakingVerification = false;
       btn.classList.remove('recording');
-      btnText.textContent = isDe ? 'Jetzt laut sprechen' : 'Speak Aloud Now';
+      btnText.textContent = isDe ? 'Sprechen' : 'Speak';
       speechService.stopListening();
       return;
     }
 
     this.isSpeakingVerification = true;
     btn.classList.add('recording');
-    btnText.textContent = isDe ? 'Höre zu... Jetzt sprechen' : 'Listening... Speak now';
+    btnText.textContent = isDe ? 'Stop' : 'Stop';
     feedbackBox.style.display = 'none';
 
     let captured = '';
@@ -289,7 +298,7 @@ export class DictationModule {
         const spoken = finalText || captured;
         this.isSpeakingVerification = false;
         btn.classList.remove('recording');
-        btnText.textContent = isDe ? 'Jetzt laut sprechen' : 'Speak Aloud Now';
+        btnText.textContent = isDe ? 'Sprechen' : 'Speak';
 
         const evalResult = DiffEngine.evaluateSpeech({
           referenceText: this.getCurrent().sentence,

@@ -154,15 +154,18 @@ export class PhoneticsModule {
             "${twister.text}"
           </div>
 
-          <div class="control-bar">
-            <button id="playTwisterBtn" class="btn btn-accent">
+          <div class="control-bar mobile-app-bar">
+            <button id="playTwisterBtn" class="btn btn-accent" title="${isDe ? 'Demonstration anhören' : 'Listen Demonstration'}">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-              <span>${isDe ? 'Demonstration anhören' : 'Listen Demonstration'}</span>
+              <span>
+                <span class="btn-short-text">Demo</span>
+                <span class="btn-long-text">${isDe ? ' anhören' : ' Listen'}</span>
+              </span>
             </button>
 
-            <button id="twisterRecordBtn" class="mic-action-btn">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
-              <span id="twisterRecordText">${isDe ? 'Tempo-Drill starten' : 'Start Speed Drill'}</span>
+            <button id="twisterRecordBtn" class="mic-action-btn mobile-fab-mic" title="${isDe ? 'Tempo-Drill starten' : 'Start Speed Drill'}">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+              <span id="twisterRecordText">${isDe ? 'Drill' : 'Drill'}</span>
             </button>
           </div>
 
@@ -306,14 +309,14 @@ export class PhoneticsModule {
     if (this.isRecordingTwister) {
       this.isRecordingTwister = false;
       btn.classList.remove('recording');
-      btnText.textContent = isDe ? 'Tempo-Drill starten' : 'Start Speed Drill';
+      btnText.textContent = isDe ? 'Drill' : 'Drill';
       speechService.stopListening();
       return;
     }
 
     this.isRecordingTwister = true;
     btn.classList.add('recording');
-    btnText.textContent = isDe ? 'Höre zu... Zungenbrecher aufsagen!' : 'Listening... Say Twister!';
+    btnText.textContent = isDe ? 'Stop' : 'Stop';
     feedback.style.display = 'none';
 
     let captured = '';
@@ -328,7 +331,7 @@ export class PhoneticsModule {
         const spoken = finalText || captured;
         this.isRecordingTwister = false;
         btn.classList.remove('recording');
-        btnText.textContent = isDe ? 'Tempo-Drill starten' : 'Start Speed Drill';
+        btnText.textContent = isDe ? 'Drill' : 'Drill';
 
         if (!spoken || !spoken.trim()) return;
 
@@ -356,7 +359,7 @@ export class PhoneticsModule {
       onError: () => {
         this.isRecordingTwister = false;
         btn.classList.remove('recording');
-        btnText.textContent = isDe ? 'Tempo-Drill starten' : 'Start Speed Drill';
+        btnText.textContent = isDe ? 'Drill' : 'Drill';
       }
     });
   }

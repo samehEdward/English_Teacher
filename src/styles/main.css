@@ -1399,7 +1399,7 @@ input:invalid, textarea:invalid {
    ========================================================================== */
 @media (max-width: 880px) {
   .app-container {
-    padding: 12px 12px calc(40px + env(safe-area-inset-bottom, 20px)) 12px;
+    padding: 12px 12px calc(90px + env(safe-area-inset-bottom, 20px)) 12px;
     gap: 16px;
   }
 
@@ -1484,6 +1484,243 @@ input:invalid, textarea:invalid {
   }
 }
 
+/* ==========================================================================
+   Mobile-First Sticky App Bar & Responsive Controls (< 768px)
+   ========================================================================== */
+@media (max-width: 768px) {
+  /* Prevent scrollable content from being hidden behind sticky bottom bar */
+  .app-container {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 20px)) !important;
+  }
+
+  .module-view {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom, 16px));
+  }
+
+  .chat-conversation,
+  .voc-chat-container {
+    padding-bottom: 95px !important;
+  }
+
+  /* Fixed Modern Glassmorphic Bottom App Bar */
+  .control-bar,
+  .mobile-app-bar {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    z-index: 990 !important;
+    background: rgba(10, 15, 26, 0.92) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-radius: 20px 20px 0 0 !important;
+    border-top: 1px solid rgba(99, 102, 241, 0.45) !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.75) !important;
+    padding: 8px 16px calc(10px + env(safe-area-inset-bottom, 16px)) 16px !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-around !important;
+    gap: 8px !important;
+    flex-wrap: nowrap !important;
+  }
+
+  .playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Primary Prominent Floating Action Button (FAB) */
+  .mic-action-btn,
+  .mobile-fab-mic {
+    min-width: 58px !important;
+    min-height: 58px !important;
+    width: 58px !important;
+    height: 58px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.5), 0 0 0 3px rgba(10, 15, 26, 0.9) !important;
+    transform: translateY(-14px) !important;
+    flex-shrink: 0 !important;
+    z-index: 995 !important;
+    cursor: pointer;
+  }
+
+  .mic-action-btn svg,
+  .mobile-fab-mic svg {
+    width: 22px;
+    height: 22px;
+    margin: 0;
+  }
+
+  .mic-action-btn span,
+  .mobile-fab-mic span {
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1;
+    margin-top: 2px;
+    max-width: 52px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+  }
+
+  .mic-action-btn.recording,
+  .mobile-fab-mic.recording {
+    transform: translateY(-14px) scale(1.08) !important;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+    animation: fabPulse 1.2s infinite ease-in-out !important;
+  }
+
+  /* Accessibility 48px Touch Target Standard */
+  .btn,
+  .tab-btn,
+  .form-input {
+    min-height: 48px;
+  }
+
+  .btn-sm {
+    min-height: 44px;
+    padding: 6px 14px;
+  }
+
+  .btn {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+
+  .btn-long-text {
+    display: none;
+  }
+
+  .btn-short-text {
+    display: inline;
+  }
+
+  /* Roleplay & Vocational Mobile Chat Input Bar */
+  .chat-bottom-input-bar {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    z-index: 990 !important;
+    background: rgba(10, 15, 26, 0.94) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-top: 1px solid rgba(99, 102, 241, 0.45) !important;
+    padding: 8px 14px calc(10px + env(safe-area-inset-bottom, 16px)) 14px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.75) !important;
+  }
+
+  .chat-bottom-input-bar .form-input {
+    flex: 1;
+    min-height: 48px;
+    font-size: 14px;
+    border-radius: var(--radius-full);
+    padding: 0 16px;
+    border-color: rgba(99, 102, 241, 0.35);
+  }
+
+  .chat-bottom-input-bar .mic-action-btn,
+  .chat-bottom-input-bar #roleplayMicBtn,
+  .chat-bottom-input-bar #vocMicBtn {
+    min-width: 48px !important;
+    min-height: 48px !important;
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 50% !important;
+    transform: none !important;
+    padding: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 2px 12px rgba(99, 102, 241, 0.4);
+  }
+
+  .chat-bottom-input-bar .btn-primary {
+    min-width: 48px;
+    min-height: 48px;
+    padding: 0 16px;
+    border-radius: var(--radius-full);
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+}
+
+@keyframes fabPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.8), 0 4px 20px rgba(239, 68, 68, 0.5), 0 0 0 3px rgba(10, 15, 26, 0.9);
+  }
+  50% {
+    box-shadow: 0 0 0 16px rgba(239, 68, 68, 0), 0 6px 25px rgba(239, 68, 68, 0.8), 0 0 0 3px rgba(10, 15, 26, 0.9);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0), 0 4px 20px rgba(239, 68, 68, 0.5), 0 0 0 3px rgba(10, 15, 26, 0.9);
+  }
+}
+
+/* ==========================================================================
+   Small Mobile Typography & Padding Adjustments (< 640px)
+   ========================================================================== */
+@media (max-width: 640px) {
+  .section-title {
+    font-size: 19px !important;
+    letter-spacing: -0.3px;
+  }
+
+  .section-subtitle {
+    font-size: 12px !important;
+  }
+
+  .practice-card {
+    padding: 14px !important;
+  }
+
+  .card-header-bar {
+    padding-bottom: 8px !important;
+  }
+
+  h3 {
+    font-size: 17px !important;
+  }
+
+  h4 {
+    font-size: 15px !important;
+  }
+
+  .reading-text-viewport {
+    font-size: 18px !important;
+    line-height: 1.8 !important;
+    padding: 14px !important;
+  }
+
+  .live-speech-feedback {
+    padding: 10px 14px !important;
+    font-size: 13px !important;
+  }
+
+  .waveform-canvas {
+    height: 48px !important;
+  }
+}
+
 @media (max-width: 480px) {
   .brand-title {
     font-size: 19px;
@@ -1520,7 +1757,7 @@ input:invalid, textarea:invalid {
   }
 
   .btn {
-    min-height: 42px;
+    min-height: 48px;
   }
 }
 

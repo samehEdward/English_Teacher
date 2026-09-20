@@ -96,20 +96,24 @@ export class ReadAloudModule {
           <canvas id="readWaveformCanvas" class="waveform-canvas" width="600" height="60"></canvas>
 
           <!-- Control Bar -->
-          <div class="control-bar">
+          <div class="control-bar mobile-app-bar">
             <div class="playback-controls">
-              <button id="listenCoachBtn" class="btn btn-accent">
+              <button id="listenCoachBtn" class="btn btn-accent" title="${isDe ? 'Coach anhören' : 'Listen to Coach'}">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
-                <span id="listenCoachBtnText">${isDe ? 'Coach anhören' : 'Listen to Coach'}</span>
+                <span id="listenCoachBtnText">
+                  <span class="btn-short-text">${isDe ? 'Anhören' : 'Listen'}</span>
+                  <span class="btn-long-text">${isDe ? ' (Coach)' : ' to Coach'}</span>
+                </span>
               </button>
               <button id="resetReadBtn" class="btn btn-secondary btn-sm" title="Clear highlights">
-                ${isDe ? 'Zurücksetzen' : 'Reset'}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+                <span>Reset</span>
               </button>
             </div>
 
-            <button id="micRecordBtn" class="mic-action-btn">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
-              <span id="micRecordBtnText">${isDe ? 'Sprechen starten' : 'Start Speaking'}</span>
+            <button id="micRecordBtn" class="mic-action-btn mobile-fab-mic" title="${isDe ? 'Sprechen starten' : 'Start Speaking'}">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+              <span id="micRecordBtnText">${isDe ? 'Sprechen' : 'Speak'}</span>
             </button>
           </div>
         </div>
@@ -381,7 +385,7 @@ export class ReadAloudModule {
       // Stop recording and process
       this.isRecording = false;
       micBtn.classList.remove('recording');
-      micBtnText.textContent = isDe ? 'Sprechen starten' : 'Start Speaking';
+      micBtnText.textContent = isDe ? 'Sprechen' : 'Speak';
       this.stopVisualizer(canvas);
 
       const captured = (this.spokenTranscript || '').trim();
@@ -404,7 +408,7 @@ export class ReadAloudModule {
     this.recordStartTime = Date.now();
     this.spokenTranscript = '';
     micBtn.classList.add('recording');
-    micBtnText.textContent = isDe ? 'Stoppen & Auswerten' : 'Stop & Evaluate';
+    micBtnText.textContent = isDe ? 'Stop' : 'Stop';
     interimSpan.textContent = isDe ? 'Höre zu... Jetzt sprechen.' : 'Listening... Speak now.';
 
     this.startVisualizer(canvas);
@@ -442,11 +446,11 @@ export class ReadAloudModule {
           } else {
             this.isRecording = false;
             micBtn.classList.remove('recording');
-            micBtnText.textContent = isDe ? 'Sprechen starten' : 'Start Speaking';
+            micBtnText.textContent = isDe ? 'Sprechen' : 'Speak';
             this.stopVisualizer(canvas);
             interimSpan.textContent = isDe 
-              ? 'Keine Sprache erkannt oder Mikrofon unterbrochen. Bitte erneut auf "Sprechen starten" tippen.' 
-              : 'No speech caught or microphone interrupted. Please tap "Start Speaking" again.';
+              ? 'Keine Sprache erkannt oder Mikrofon unterbrochen. Bitte erneut auf "Sprechen" tippen.' 
+              : 'No speech caught or microphone interrupted. Please tap "Speak" again.';
           }
         }
       },
