@@ -7,8 +7,8 @@ export class PWAInstaller {
     this.localIP = '192.168.0.84';
     this.port = window.location.port || '5174';
     this.phoneUrl = `http://${this.localIP}:${this.port}/`;
-    this.httpsUrl = 'https://ten-paths-travel.loca.lt';
-    this.tunnelPassword = '84.115.226.225';
+    this.httpsUrl = 'https://samehedward.github.io/English_Teacher/';
+    this.tunnelPassword = '';
     this.activeUrlMode = 'https'; // 'https' or 'local'
 
     this.init();
@@ -94,7 +94,7 @@ export class PWAInstaller {
       urlDisplay.textContent = targetUrl;
     }
     if (tunnelPwdBadge) {
-      tunnelPwdBadge.style.display = this.activeUrlMode === 'https' ? 'block' : 'none';
+      tunnelPwdBadge.style.display = (this.activeUrlMode === 'https' && this.tunnelPassword) ? 'block' : 'none';
     }
   }
 
