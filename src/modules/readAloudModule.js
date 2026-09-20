@@ -326,6 +326,11 @@ export class ReadAloudModule {
       micBtnText.textContent = isDe ? 'Sprechen starten' : 'Start Speaking';
       speechService.stopListening();
       await audioRecorder.stopRecording();
+      if (this.spokenTranscript && this.spokenTranscript.trim().length > 0) {
+        this.finishEvaluation(this.spokenTranscript);
+      } else {
+        interimSpan.textContent = isDe ? 'Aufnahme beendet. Keine Sprache erfasst.' : 'Recording stopped. No speech captured.';
+      }
       return;
     }
 
@@ -361,12 +366,24 @@ export class ReadAloudModule {
       },
       onResult: (finalText) => {
         const fullSpoken = finalText || this.spokenTranscript;
-        this.finishEvaluation(fullSpoken);
+        if (fullSpoken && fullSpoken.trim().length > 0) {
+          this.finishEvaluation(fullSpoken);
+        }
       },
       onError: (err) => {
         console.warn('Speech recognition error:', err);
         if (this.isRecording) {
-          this.finishEvaluation(this.spokenTranscript);
+          if (this.spokenTranscript && this.spokenTranscript.trim().length > 3) {
+            this.finishEvaluation(this.spokenTranscript);
+          } else {
+            this.isRecording = false;
+            micBtn.classList.remove('recording');
+            micBtnText.textContent = isDe ? 'Sprechen starten' : 'Start Speaking';
+            audioRecorder.stopRecording();
+            interimSpan.textContent = isDe 
+              ? 'Keine Sprache erkannt oder Mikrofon unterbrochen. Bitte erneut auf "Sprechen starten" tippen.' 
+              : 'No speech caught or microphone interrupted. Please tap "Start Speaking" again.';
+          }
         }
       }
     });

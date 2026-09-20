@@ -138,18 +138,20 @@ export class RoleplayModule {
                 `).join('')}
               </div>
 
-              <!-- Speaking Trigger -->
-              <div class="control-bar" style="margin-top: 8px;">
-                <div style="font-size: 13px; color: var(--text-muted);" id="roleplayInterim">
-                  ${this.activeSelectedPrompt 
-                    ? (isDe ? 'Ausgewählter Satz bereit. Drücken Sie "Antwort sprechen".' : 'Selected line ready. Press Speak to respond.') 
-                    : (isDe ? 'Wählen Sie oben einen Satz oder sprechen Sie frei...' : 'Choose a line above or speak freely...')}
-                </div>
-                <button id="roleplayMicBtn" class="mic-action-btn">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
-                  <span id="roleplayMicText">${isDe ? 'Antwort sprechen' : 'Speak Response'}</span>
+              <!-- Custom Reply & Mic Input Bar -->
+              <div style="display: flex; gap: 10px; align-items: center; margin-top: 8px;">
+                <input type="text" id="roleplayCustomInput" class="form-input" style="flex: 1;" placeholder="${isDe ? 'Oder formulieren Sie Ihre eigene Antwort hier...' : 'Or type your own custom response here...'}" value="${this.activeSelectedPrompt || ''}" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off" />
+
+                <button id="roleplayMicBtn" class="mic-action-btn ${this.isListening ? 'recording' : ''}" style="padding: 10px 18px; border-radius: var(--radius-md); font-size: 13px;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+                  <span id="roleplayMicText">${this.isListening ? (isDe ? 'Höre...' : 'Listening...') : (isDe ? 'Sprechen' : 'Speak')}</span>
+                </button>
+
+                <button id="roleplaySendBtn" class="btn btn-primary" style="padding: 10px 18px;">
+                  ${isDe ? 'Senden ↵' : 'Send ↵'}
                 </button>
               </div>
+              <div style="font-size: 12px; color: var(--text-muted); min-height: 18px;" id="roleplayInterim"></div>
             </div>
           ` : `
             <div style="text-align: center; padding: 30px; background: rgba(16, 185, 129, 0.1); border-radius: var(--radius-md); border: 1px solid rgba(16, 185, 129, 0.3);">
@@ -245,10 +247,30 @@ export class RoleplayModule {
       card.addEventListener('click', () => {
         const text = decodeURIComponent(card.dataset.text);
         this.activeSelectedPrompt = text;
+        const input = this.container.querySelector('#roleplayCustomInput');
+        if (input) input.value = text;
         this.render();
         this.bindEvents();
       });
     });
+
+    // Custom text input send
+    const roleplayInput = this.container.querySelector('#roleplayCustomInput');
+    const sendBtn = this.container.querySelector('#roleplaySendBtn');
+    if (roleplayInput && sendBtn) {
+      const handleSend = () => {
+        const text = roleplayInput.value.trim();
+        if (!text) return;
+        this.handleUserSpokenReply(text);
+      };
+      sendBtn.addEventListener('click', handleSend);
+      roleplayInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) {
+          e.preventDefault();
+          handleSend();
+        }
+      });
+    }
 
     // Mic action button
     const micBtn = this.container.querySelector('#roleplayMicBtn');
@@ -275,8 +297,8 @@ export class RoleplayModule {
 
     this.isListening = true;
     btn.classList.add('recording');
-    btnText.textContent = isDe ? 'Höre zu... Jetzt antworten' : 'Listening... Speak now';
-    interimBox.textContent = isDe ? 'Höre zu... Bitte laut antworten.' : 'Listening... Speak your reply aloud.';
+    btnText.textContent = isDe ? 'Höre...' : 'Listening...';
+    interimBox.textContent = isDe ? 'Höre zu... Bitte sprechen.' : 'Listening... Speak now.';
 
     let spokenAccumulator = '';
     speechService.startListening({
@@ -286,15 +308,19 @@ export class RoleplayModule {
       onInterim: ({ full }) => {
         spokenAccumulator = full;
         interimBox.textContent = full;
+        const input = this.container.querySelector('#roleplayCustomInput');
+        if (input) input.value = full;
       },
       onResult: (finalText) => {
         const spoken = finalText || spokenAccumulator;
+        const input = this.container.querySelector('#roleplayCustomInput');
+        if (input && spoken) input.value = spoken;
         this.handleUserSpokenReply(spoken);
       },
       onError: () => {
         this.isListening = false;
         btn.classList.remove('recording');
-        btnText.textContent = isDe ? 'Antwort sprechen' : 'Speak Response';
+        btnText.textContent = isDe ? 'Sprechen' : 'Speak';
       }
     });
   }
@@ -305,9 +331,18 @@ export class RoleplayModule {
     const btn = this.container.querySelector('#roleplayMicBtn');
     const btnText = this.container.querySelector('#roleplayMicText');
     if (btn) btn.classList.remove('recording');
-    if (btnText) btnText.textContent = isDe ? 'Antwort sprechen' : 'Speak Response';
+    if (btnText) btnText.textContent = isDe ? 'Sprechen' : 'Speak';
 
-    const cleanSpoken = spoken.trim() || this.activeSelectedPrompt || (isDe ? 'Ich verstehe.' : 'I understand.');
+    const cleanSpoken = (spoken || '').trim() || (this.activeSelectedPrompt || '').trim();
+    if (!cleanSpoken) {
+      const interimBox = this.container.querySelector('#roleplayInterim');
+      if (interimBox) {
+        interimBox.textContent = isDe 
+          ? 'Keine Sprache erkannt. Bitte tippen Sie eine Antwort oder wählen Sie eine Vorlage.' 
+          : 'No speech caught. Please type your response or select a suggested option.';
+      }
+      return;
+    }
 
     // Push user message
     this.chatHistory.push({

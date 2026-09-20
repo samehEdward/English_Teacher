@@ -91,7 +91,7 @@ export class VaultModule {
             <h3 style="font-size: 18px; font-weight: 700; color: #fff;">${isDe ? 'Gespeicherter Wortschatz' : 'Saved Vocabulary'} (${vault.length})</h3>
           </div>
           <div style="display: flex; gap: 10px;">
-            <input type="text" id="vaultSearchInput" class="form-input" placeholder="${isDe ? 'Wörter oder Bedeutungen suchen...' : 'Search words or definitions...'}" value="${this.searchQuery}" style="width: 240px; padding: 8px 12px; font-size: 13px;">
+            <input type="text" id="vaultSearchInput" class="form-input" placeholder="${isDe ? 'Wörter oder Bedeutungen suchen...' : 'Search words or definitions...'}" value="${this.searchQuery}" style="width: 240px; padding: 8px 12px; font-size: 13px;" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off">
             <button id="addNewWordBtn" class="btn btn-primary btn-sm">
               ${isDe ? '+ Wort hinzufügen' : '+ Add Word'}
             </button>
@@ -102,9 +102,9 @@ export class VaultModule {
         <div id="quickAddWordBox" style="display: none; padding: 18px; border-radius: var(--radius-md); background: rgba(10, 15, 26, 0.85); border: 1px solid var(--border-active); margin-bottom: 12px;">
           <h4 style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 10px;">${isDe ? 'Neues Wort im Tresor speichern' : 'Add New Word to Vault'}</h4>
           <div style="display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 10px; margin-bottom: 10px;">
-            <input type="text" id="newWordInput" class="form-input" placeholder="${isDe ? 'Wort (z.B. gemütlich)' : 'Word (e.g. serendipity)'}">
-            <input type="text" id="newIpaInput" class="form-input" placeholder="${isDe ? 'Lautschrift / IPA (optional)' : 'Phonetics / IPA (optional)'}">
-            <input type="text" id="newDefInput" class="form-input" placeholder="${isDe ? 'Bedeutung / Übersetzung' : 'Definition / Meaning'}">
+            <input type="text" id="newWordInput" class="form-input" placeholder="${isDe ? 'Wort (z.B. gemütlich)' : 'Word (e.g. serendipity)'}" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off">
+            <input type="text" id="newIpaInput" class="form-input" placeholder="${isDe ? 'Lautschrift / IPA (optional)' : 'Phonetics / IPA (optional)'}" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off">
+            <input type="text" id="newDefInput" class="form-input" placeholder="${isDe ? 'Bedeutung / Übersetzung' : 'Definition / Meaning'}" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off">
           </div>
           <div style="display: flex; gap: 8px;">
             <button id="saveNewWordConfirmBtn" class="btn btn-primary btn-sm">${isDe ? 'Speichern' : 'Save Word'}</button>
@@ -171,11 +171,12 @@ export class VaultModule {
     if (searchInput) {
       searchInput.addEventListener('input', (e) => {
         this.searchQuery = e.target.value;
-        this.render();
-        this.bindEvents();
-        const freshInput = this.container.querySelector('#vaultSearchInput');
-        freshInput.focus();
-        freshInput.setSelectionRange(this.searchQuery.length, this.searchQuery.length);
+        const q = this.searchQuery.toLowerCase().trim();
+        const rows = this.container.querySelectorAll('.vault-table tbody tr');
+        rows.forEach(tr => {
+          const text = tr.textContent.toLowerCase();
+          tr.style.display = (!q || text.includes(q)) ? '' : 'none';
+        });
       });
     }
 

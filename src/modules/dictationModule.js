@@ -87,7 +87,7 @@ export class DictationModule {
           <!-- User Writing Input Area -->
           <div class="form-group">
             <label style="font-size: 14px; font-weight: 600; color: #cbd5e1;">${isDe ? 'Tippen Sie, was Sie hören:' : 'Type what you hear:'}</label>
-            <textarea id="dictationTextarea" class="dictation-input" placeholder="${isDe ? 'Tippen Sie den deutschen Satz, den Sie gehört haben... (Enter drücken)' : 'Type the English sentence you heard... (Press Enter or click Check Writing)'}" rows="3"></textarea>
+            <textarea id="dictationTextarea" class="dictation-input" placeholder="${isDe ? 'Tippen Sie den deutschen Satz, den Sie gehört haben... (Enter drücken)' : 'Type the English sentence you heard... (Press Enter or click Check Writing)'}" rows="3" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off"></textarea>
           </div>
 
           <!-- Action Controls -->
@@ -161,7 +161,7 @@ export class DictationModule {
 
     const textarea = this.container.querySelector('#dictationTextarea');
     textarea.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
+      if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
         e.preventDefault();
         this.checkWriting();
       }
@@ -208,7 +208,12 @@ export class DictationModule {
     const isDe = this.currentLang === 'de';
     const inputVal = this.container.querySelector('#dictationTextarea').value;
     if (!inputVal.trim()) {
-      alert(isDe ? 'Bitte tippen Sie zuerst, was Sie gehört haben!' : 'Please type what you heard first!');
+      const diffWrap = this.container.querySelector('#diffResultsWrap');
+      const diffDisplay = this.container.querySelector('#diffDisplay');
+      if (diffWrap && diffDisplay) {
+        diffWrap.style.display = 'flex';
+        diffDisplay.innerHTML = `<span style="color: #f59e0b; font-size: 14px;">${isDe ? '⚠️ Bitte tippen Sie zuerst, was Sie gehört haben.' : '⚠️ Please type what you heard first.'}</span>`;
+      }
       return;
     }
 

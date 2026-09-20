@@ -168,6 +168,8 @@ class SpeechService {
     this.recognition.maxAlternatives = 1;
 
     let finalTranscript = '';
+    let hadFatalError = false;
+    let isAborted = false;
 
     this.recognition.onstart = () => {
       this.isListening = true;
@@ -175,35 +177,63 @@ class SpeechService {
     };
 
     this.recognition.onresult = (event) => {
-      let interimTranscript = '';
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          finalTranscript += (finalTranscript ? ' ' : '') + transcript;
-        } else {
-          interimTranscript += transcript;
+      let finalAccum = '';
+      let interimAccum = '';
+
+      for (let i = 0; i < event.results.length; ++i) {
+        const res = event.results[i];
+        if (res && res[0]) {
+          const text = res[0].transcript;
+          if (res.isFinal) {
+            finalAccum += (finalAccum ? ' ' : '') + text;
+          } else {
+            interimAccum += (interimAccum ? ' ' : '') + text;
+          }
         }
       }
 
+      finalTranscript = finalAccum;
+      const combined = (finalAccum + (finalAccum && interimAccum ? ' ' : '') + interimAccum).trim();
+
       if (onInterim) {
         onInterim({
-          final: finalTranscript,
-          interim: interimTranscript,
-          full: (finalTranscript + ' ' + interimTranscript).trim()
+          final: finalAccum,
+          interim: interimAccum,
+          full: combined
         });
       }
     };
 
     this.recognition.onerror = (event) => {
-      console.warn('Speech recognition error event:', event.error);
+      const errType = event.error || (event.message || 'unknown');
+      console.warn('Speech recognition error event:', errType);
+
+      // 'aborted' is triggered when the user stops listening manually
+      if (errType === 'aborted') {
+        isAborted = true;
+        return;
+      }
+
+      // 'no-speech' is non-fatal on mobile (e.g. user thought for a second before speaking)
+      if (errType === 'no-speech') {
+        hadFatalError = false;
+        if (onError) onError(event);
+        return;
+      }
+
+      hadFatalError = true;
       if (onError) onError(event);
     };
 
     this.recognition.onend = () => {
       this.isListening = false;
-      if (onResult) {
+      this.recognition = null;
+
+      // Only invoke onResult when there was no fatal error, session wasn't aborted, and text was captured
+      if (!hadFatalError && !isAborted && finalTranscript.trim() && onResult) {
         onResult(finalTranscript.trim());
       }
+
       if (onEnd) onEnd();
     };
 
@@ -211,17 +241,24 @@ class SpeechService {
       this.recognition.start();
     } catch (err) {
       console.error('Failed to start recognition:', err);
+      hadFatalError = true;
       if (onError) onError(err);
     }
   }
 
   stopListening() {
-    if (this.recognition && this.isListening) {
+    if (this.recognition) {
       try {
-        this.recognition.stop();
+        // abort() immediately shuts down recognition on mobile WebViews without waiting
+        this.recognition.abort();
       } catch (e) {
-        // Ignore if already stopping
+        try {
+          this.recognition.stop();
+        } catch (err) {
+          // Ignore
+        }
       }
+      this.recognition = null;
     }
     this.isListening = false;
   }

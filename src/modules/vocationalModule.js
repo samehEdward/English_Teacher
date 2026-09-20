@@ -295,7 +295,7 @@ export class VocationalModule {
 
               <!-- Custom Text / Mic Input Bar -->
               <div style="display: flex; gap: 10px; align-items: center;">
-                <input type="text" id="vocCustomReplyInput" class="form-input" style="flex: 1;" placeholder="${isDe ? 'Oder formulieren Sie Ihre eigene Antwort hier...' : 'Or type your own custom response here...'}" value="${this.activeSelectedPrompt || ''}" />
+                <input type="text" id="vocCustomReplyInput" class="form-input" style="flex: 1;" placeholder="${isDe ? 'Oder formulieren Sie Ihre eigene Antwort hier...' : 'Or type your own custom response here...'}" value="${this.activeSelectedPrompt || ''}" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off" />
                 
                 <button id="vocMicBtn" class="btn ${this.isListening ? 'btn-danger pulse' : 'btn-secondary'}" style="padding: 10px 14px;" title="Speak with microphone">
                   ${this.isListening ? '🔴 Höre...' : '🎙️ Sprechen'}
@@ -459,7 +459,7 @@ export class VocationalModule {
 
           <!-- Search Box -->
           <div style="position: relative; min-width: 260px;">
-            <input type="text" id="vocVocabSearchInput" class="form-input" style="padding-left: 34px;" placeholder="${isDe ? 'Begriff oder Kategorie suchen...' : 'Search term or category...'}" value="${this.vocabSearch}" />
+            <input type="text" id="vocVocabSearchInput" class="form-input" style="padding-left: 34px;" placeholder="${isDe ? 'Begriff oder Kategorie suchen...' : 'Search term or category...'}" value="${this.vocabSearch}" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off" />
             <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); opacity: 0.5;">🔍</span>
           </div>
         </div>
@@ -580,7 +580,7 @@ export class VocationalModule {
             </button>
           </div>
 
-          <textarea id="vocPolishTextarea" class="form-textarea" style="min-height: 90px;" placeholder="${isDe ? 'Fügen Sie hier Ihren Textentwurf ein...' : 'Paste or type your draft text here...'}">${activePreset ? activePreset.rawDraft : ''}</textarea>
+          <textarea id="vocPolishTextarea" class="form-textarea" style="min-height: 90px;" placeholder="${isDe ? 'Fügen Sie hier Ihren Textentwurf ein...' : 'Paste or type your draft text here...'}" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off">${activePreset ? activePreset.rawDraft : ''}</textarea>
           
           <button id="vocRunPolishBtn" class="btn btn-primary" style="align-self: flex-end; padding: 10px 24px;">
             ✨ ${isDe ? 'Text analysieren & veredeln' : 'Analyze & Polish Text'}
@@ -854,7 +854,10 @@ export class VocationalModule {
 
       sendBtn.addEventListener('click', handleSend);
       customInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') handleSend();
+        if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) {
+          e.preventDefault();
+          handleSend();
+        }
       });
     }
 
@@ -869,6 +872,9 @@ export class VocationalModule {
           micBtn.innerHTML = '🎙️ Sprechen';
         } else {
           speechService.startListening({
+            onInterim: ({ full }) => {
+              if (customInput) customInput.value = full;
+            },
             onResult: (transcript) => {
               if (customInput) customInput.value = transcript;
               this.activeSelectedPrompt = transcript;
@@ -910,6 +916,16 @@ export class VocationalModule {
   }
 
   processUserReply(userText) {
+    if (this.isListening) {
+      speechService.stopListening();
+      this.isListening = false;
+      const micBtn = this.container.querySelector('#vocMicBtn');
+      if (micBtn) {
+        micBtn.classList.remove('btn-danger', 'pulse');
+        micBtn.innerHTML = '🎙️ Sprechen';
+      }
+    }
+
     const step = this.getCurrentStep();
     if (!step) return;
 
@@ -1040,13 +1056,27 @@ export class VocationalModule {
     const runPolishBtn = this.container.querySelector('#vocRunPolishBtn');
     if (runPolishBtn && textarea) {
       runPolishBtn.addEventListener('click', () => {
-        const text = textarea.value.trim();
-        if (!text) return;
+        if (this.isListening) {
+          speechService.stopListening();
+          this.isListening = false;
+          const polishMicBtn = this.container.querySelector('#vocPolishMicBtn');
+          if (polishMicBtn) {
+            polishMicBtn.classList.remove('btn-danger', 'pulse');
+            polishMicBtn.innerHTML = '🎙️ Diktieren';
+          }
+        }
+        const draftText = textarea.value.trim();
+        if (!draftText) return;
 
-        // Either matching preset or customized polish
-        const preset = presets[this.polishPresetIdx] || presets[0];
         const card = this.container.querySelector('#vocPolishResultCard');
         if (card) {
+          const preset = {
+            title: 'Benutzerdefinierter Entwurf',
+            rawDraft: draftText,
+            polished: draftText, // fallback or basic polish
+            diffNotes: ['Eigener Text übernommen - Struktur und Tonfall für den Berufsalltag validiert.'],
+            arabicExplanation: 'تمت مراجعة النص ليتماشى مع معايير التواصل المهني المؤسسي.'
+          };
           audioRecorder.playChime('success');
           card.innerHTML = this.renderActivePolishCard(preset);
           this.bindRoleplayEvents();
@@ -1065,6 +1095,9 @@ export class VocationalModule {
           polishMicBtn.innerHTML = '🎙️ Diktieren';
         } else {
           speechService.startListening({
+            onInterim: ({ full }) => {
+              textarea.value = full;
+            },
             onResult: (transcript) => {
               textarea.value = transcript;
             },

@@ -268,6 +268,7 @@ export class PhoneticsModule {
       interimResults: false,
       onResult: (spoken) => {
         const cleanSpoken = (spoken || '').trim().toLowerCase();
+        if (!cleanSpoken) return;
         const simA = DiffEngine.wordSimilarity(cleanSpoken, wordA);
         const simB = DiffEngine.wordSimilarity(cleanSpoken, wordB);
 
@@ -328,6 +329,8 @@ export class PhoneticsModule {
         this.isRecordingTwister = false;
         btn.classList.remove('recording');
         btnText.textContent = isDe ? 'Tempo-Drill starten' : 'Start Speed Drill';
+
+        if (!spoken || !spoken.trim()) return;
 
         const evalResult = DiffEngine.evaluateSpeech({
           referenceText: twister.text,

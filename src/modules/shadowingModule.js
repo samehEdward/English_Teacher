@@ -276,7 +276,20 @@ export class ShadowingModule {
       },
       onResult: (finalText) => {
         const spoken = finalText || capturedSpoken;
-        this.evaluateShadow(spoken);
+        if (spoken && spoken.trim().length > 0) {
+          this.evaluateShadow(spoken);
+        }
+      },
+      onError: () => {
+        this.isRecording = false;
+        btn.classList.remove('recording');
+        textSpan.textContent = isDe ? 'Shadowing aufnehmen' : 'Record Your Shadow';
+        audioRecorder.stopRecording();
+      },
+      onEnd: () => {
+        this.isRecording = false;
+        btn.classList.remove('recording');
+        textSpan.textContent = isDe ? 'Shadowing aufnehmen' : 'Record Your Shadow';
       }
     });
   }

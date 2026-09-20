@@ -79,8 +79,22 @@ class AudioRecorderService {
     }
   }
 
+  releaseMicrophone() {
+    if (this.stream) {
+      try {
+        this.stream.getTracks().forEach(track => {
+          track.stop();
+        });
+      } catch (e) {
+        // Ignore
+      }
+      this.stream = null;
+    }
+  }
+
   stopRecording() {
     return new Promise((resolve) => {
+      this.releaseMicrophone();
       if (!this.mediaRecorder || this.mediaRecorder.state === 'inactive') {
         this.isRecording = false;
         this.stopWaveformVisualizer();
@@ -96,7 +110,13 @@ class AudioRecorderService {
         resolve({ blob: this.audioBlob, url: this.audioUrl });
       };
 
-      this.mediaRecorder.stop();
+      try {
+        this.mediaRecorder.stop();
+      } catch (e) {
+        this.isRecording = false;
+        this.stopWaveformVisualizer();
+        resolve(null);
+      }
     });
   }
 

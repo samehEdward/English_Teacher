@@ -41,6 +41,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -51,6 +52,8 @@ body {
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
   background-image: 
     radial-gradient(circle at 15% 10%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
     radial-gradient(circle at 85% 80%, rgba(6, 182, 212, 0.12) 0%, transparent 40%),
@@ -468,7 +471,8 @@ body {
   font-size: 20px;
   line-height: 2.1;
   letter-spacing: 0.2px;
-  user-select: text;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .word-token {
@@ -1073,6 +1077,39 @@ body {
 
 .form-input:focus, .form-textarea:focus {
   border-color: var(--border-focus);
+}
+
+/* Ensure only interactive editable fields have text selection enabled */
+input[type="text"],
+input[type="search"],
+textarea,
+.form-input,
+.form-textarea,
+.dictation-input,
+[contenteditable="true"] {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default;
+}
+
+/* Prevent mobile browser error borders & auto-outlines while composing */
+input:focus, textarea:focus, select:focus {
+  outline: none;
+}
+
+input:invalid, textarea:invalid {
+  box-shadow: none;
+  outline: none;
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  color: #ffffff !important;
+  border-color: rgba(239, 68, 68, 0.5) !important;
+}
+
+.pulse {
+  animation: pulseMic 1.5s infinite;
 }
 
 /* ==========================================================================
