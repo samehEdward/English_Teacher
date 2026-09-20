@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EchoSpeak — Local English Fluency Studio</title>
+    <meta name="description" content="A 100% local, browser-based English learning studio to improve speaking skills through reading, writing, shadowing, and listening." />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'><path d='M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z'/><path d='M19 10v2a7 7 0 0 1-14 0v-2'/><line x1='12' y1='19' x2='12' y2='22' stroke='%236366f1' stroke-width='2'/></svg>" />
+    <link rel="stylesheet" href="/src/styles/main.css" />
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- Top Application Header -->
+      <header class="top-header glass-panel">
+        <div class="brand-section">
+          <div class="brand-icon-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+              <line x1="12" y1="19" x2="12" y2="22"></line>
+            </svg>
+          </div>
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <h1 class="brand-title">EchoSpeak</h1>
+              <span class="brand-badge">Local Studio</span>
+            </div>
+            <p style="font-size: 12px; color: var(--text-dim); margin-top: -2px;">Master Spoken English • 100% Browser Native</p>
+          </div>
+        </div>
+
+        <div class="header-controls">
+          <!-- Dynamic Streak & Words Chips -->
+          <div class="stat-chip streak-active" id="headerStreakChip" title="Active practice streak">
+            <span class="stat-icon">🔥</span>
+            <span id="headerStreakVal">1 Day Streak</span>
+          </div>
+
+          <div class="stat-chip" id="headerWordsChip" title="Total words spoken">
+            <span class="stat-icon">🗣️</span>
+            <span id="headerWordsVal">0 Spoken</span>
+          </div>
+
+          <!-- Native Voice Accent Picker -->
+          <div class="voice-picker-group" title="Select browser synthesized English voice">
+            <label for="globalVoiceSelect">Voice:</label>
+            <select id="globalVoiceSelect" class="voice-select">
+              <option value="">Default English Voice</option>
+            </select>
+          </div>
+        </div>
+      </header>
+
+      <!-- Navigation Tabs Bar -->
+      <nav class="nav-tabs glass-panel" id="mainNavTabs" aria-label="Learning Pillars">
+        <button class="tab-btn active" data-target="readModule">
+          <span>📖 Read & Speak</span>
+          <span class="tab-badge">Core</span>
+        </button>
+        <button class="tab-btn" data-target="shadowModule">
+          <span>🎧 Shadowing Lab</span>
+          <span class="tab-badge">Echo</span>
+        </button>
+        <button class="tab-btn" data-target="dictModule">
+          <span>✍️ Dictation Studio</span>
+        </button>
+        <button class="tab-btn" data-target="roleplayModule">
+          <span>💬 Roleplay & Dialogue</span>
+        </button>
+        <button class="tab-btn" data-target="phoneticsModule">
+          <span>🎯 Phonetics Gym</span>
+        </button>
+        <button class="tab-btn" data-target="vaultModule">
+          <span>📚 Vault & Stats</span>
+        </button>
+      </nav>
+
+      <!-- Dynamic Learning Modules Viewports -->
+      <main>
+        <section id="readModule" class="module-view active" aria-labelledby="read-aloud-title"></section>
+        <section id="shadowModule" class="module-view" aria-labelledby="shadowing-title"></section>
+        <section id="dictModule" class="module-view" aria-labelledby="dictation-title"></section>
+        <section id="roleplayModule" class="module-view" aria-labelledby="roleplay-title"></section>
+        <section id="phoneticsModule" class="module-view" aria-labelledby="phonetics-title"></section>
+        <section id="vaultModule" class="module-view" aria-labelledby="vault-title"></section>
+      </main>
+    </div>
+
+    <!-- Modal: Custom Reading Text Importer -->
+    <div id="customTextModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-content glass-panel">
+        <div class="modal-header">
+          <h3 id="modalTitle" style="font-size: 18px; font-weight: 700; color: #fff;">Import Your Custom Text</h3>
+          <button id="closeModalBtn" class="modal-close-btn" aria-label="Close dialog">&times;</button>
+        </div>
+        <p style="font-size: 13px; color: var(--text-muted);">
+          Paste any news article, email, book excerpt, or speech. EchoSpeak will automatically enable word-by-word reading, audio pronunciation, and speech assessment.
+        </p>
+        <div class="form-group">
+          <label for="customTextTitleInput" style="font-size: 13px; font-weight: 600; color: #cbd5e1;">Article Title:</label>
+          <input type="text" id="customTextTitleInput" class="form-input" placeholder="e.g. Technology News / My Presentation" />
+        </div>
+        <div class="form-group">
+          <label for="customTextareaInput" style="font-size: 13px; font-weight: 600; color: #cbd5e1;">English Text (Paragraph):</label>
+          <textarea id="customTextareaInput" class="form-textarea" placeholder="Paste your English paragraph here..."></textarea>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+          <button id="cancelModalBtn" class="btn btn-secondary">Cancel</button>
+          <button id="saveCustomTextBtn" class="btn btn-primary">Save & Start Reading</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
