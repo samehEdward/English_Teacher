@@ -1074,3 +1074,282 @@ body {
 .form-input:focus, .form-textarea:focus {
   border-color: var(--border-focus);
 }
+
+/* ==========================================================================
+   Vocational & Career Pro Studio Styles (IT Support & Medical Lab)
+   ========================================================================== */
+.vocational-studio-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.voc-config-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 14px 20px;
+}
+
+.voc-domain-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.voc-domain-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-glass);
+  background: rgba(15, 23, 42, 0.65);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-family: inherit;
+}
+
+.voc-domain-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+.voc-domain-btn.active.it-domain {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.22) 0%, rgba(59, 130, 246, 0.22) 100%);
+  border-color: rgba(6, 182, 212, 0.6);
+  color: #ffffff;
+  box-shadow: 0 0 16px rgba(6, 182, 212, 0.25);
+}
+
+.voc-domain-btn.active.lab-domain {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(5, 150, 105, 0.22) 100%);
+  border-color: rgba(16, 185, 129, 0.6);
+  color: #ffffff;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.25);
+}
+
+.voc-domain-icon {
+  font-size: 24px;
+}
+
+.voc-domain-info {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.voc-domain-title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.voc-domain-sub {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.voc-modes-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.voc-mode-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-glass);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.voc-mode-tab:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.voc-mode-tab.active {
+  background: var(--grad-primary);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 3px 12px rgba(99, 102, 241, 0.4);
+}
+
+.active-toggle {
+  background: rgba(245, 158, 11, 0.22) !important;
+  color: #fcd34d !important;
+  border-color: rgba(245, 158, 11, 0.5) !important;
+}
+
+.voc-scenario-context-banner {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: #cbd5e1;
+  margin-bottom: 14px;
+}
+
+/* Feedback & Coaching Box */
+.voc-feedback-box {
+  margin-top: 12px;
+  background: rgba(10, 16, 30, 0.95);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  text-align: left;
+}
+
+.voc-feedback-header {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #a5b4fc;
+  letter-spacing: 0.8px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.voc-feedback-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.voc-fb-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.voc-fb-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.voc-fb-text {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.voc-old-text {
+  color: #f87171;
+  text-decoration: line-through;
+  opacity: 0.85;
+}
+
+.voc-vocab-code {
+  background: rgba(99, 102, 241, 0.15);
+  color: #c7d2fe;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+
+.voc-fb-arabic-notes {
+  background: rgba(245, 158, 11, 0.12);
+  border-right: 3px solid #f59e0b;
+  padding: 10px 12px;
+  border-radius: 6px;
+  margin-top: 4px;
+}
+
+.voc-arabic-tip-box {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 14px;
+  border-radius: var(--radius-md);
+}
+
+/* Vocab Grid */
+.voc-vocab-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.voc-card {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.voc-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+/* Quiz Options */
+.voc-quiz-option {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-glass);
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.voc-quiz-option:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.voc-quiz-option.selected-opt {
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.15);
+}
+
+.voc-quiz-option.correct-opt {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+}
+
+.voc-quiz-option.wrong-opt {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+}
+
+.opt-marker {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+}
+

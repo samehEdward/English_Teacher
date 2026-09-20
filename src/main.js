@@ -9,6 +9,7 @@ import { ShadowingModule } from './modules/shadowingModule.js';
 import { DictationModule } from './modules/dictationModule.js';
 import { RoleplayModule } from './modules/roleplayModule.js';
 import { PhoneticsModule } from './modules/phoneticsModule.js';
+import { VocationalModule } from './modules/vocationalModule.js';
 import { VaultModule } from './modules/vaultModule.js';
 
 class App {
@@ -30,6 +31,7 @@ class App {
     const dictContainer = document.getElementById('dictModule');
     const roleplayContainer = document.getElementById('roleplayModule');
     const phoneticsContainer = document.getElementById('phoneticsModule');
+    const vocationalContainer = document.getElementById('vocationalModule');
     const vaultContainer = document.getElementById('vaultModule');
 
     this.modules.read = new ReadAloudModule(readContainer);
@@ -37,6 +39,7 @@ class App {
     this.modules.dict = new DictationModule(dictContainer);
     this.modules.roleplay = new RoleplayModule(roleplayContainer);
     this.modules.phonetics = new PhoneticsModule(phoneticsContainer);
+    this.modules.vocational = new VocationalModule(vocationalContainer);
     this.modules.vault = new VaultModule(vaultContainer);
 
     this.setupNavigation();
@@ -125,6 +128,7 @@ class App {
     if (this.modules.dict) this.modules.dict.setLanguage(lang);
     if (this.modules.roleplay) this.modules.roleplay.setLanguage(lang);
     if (this.modules.phonetics) this.modules.phonetics.setLanguage(lang);
+    if (this.modules.vocational) this.modules.vocational.setLanguage(lang);
     if (this.modules.vault) this.modules.vault.setLanguage(lang);
 
     // Update UI shell
@@ -166,6 +170,9 @@ class App {
 
     const tabPhonetics = document.querySelector('#navTabPhonetics .tab-label');
     if (tabPhonetics) tabPhonetics.textContent = dict.nav.phonetics;
+
+    const tabVocational = document.querySelector('#navTabVocational .tab-label');
+    if (tabVocational && dict.nav.vocational) tabVocational.textContent = dict.nav.vocational;
 
     const tabVault = document.querySelector('#navTabVault .tab-label');
     if (tabVault) tabVault.textContent = dict.nav.vault;

@@ -13,6 +13,7 @@ export const I18N = {
       dict: '✍️ Dictation Studio',
       roleplay: '💬 Roleplay & Dialogue',
       phonetics: '🎯 Phonetics Gym',
+      vocational: '💼 Career Pro Studio',
       vault: '📚 Vault & Stats'
     },
     modal: {
@@ -57,6 +58,7 @@ export const I18N = {
       dict: '✍️ Diktat-Studio',
       roleplay: '💬 Rollenspiel & Dialog',
       phonetics: '🎯 Phonetik & Gym',
+      vocational: '💼 Fachsprache & Karriere',
       vault: '📚 Wortschatz & Stats'
     },
     modal: {
