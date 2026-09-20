@@ -1,12 +1,15 @@
 // EchoSpeak PWA Service Worker
-const CACHE_NAME = 'echospeak-pwa-v1';
+const CACHE_NAME = 'echospeak-pwa-v2';
 
 const PRECACHE_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.webmanifest',
-  '/icons/icon-192.svg',
-  '/icons/icon-512.svg'
+  './',
+  './index.html',
+  './manifest.json',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/icon-maskable-512.png',
+  './icons/icon-192.svg',
+  './icons/icon-512.svg'
 ];
 
 self.addEventListener('install', (event) => {
@@ -59,9 +62,10 @@ self.addEventListener('fetch', (event) => {
       .catch(() => {
         return caches.match(event.request).then((cachedResponse) => {
           if (cachedResponse) return cachedResponse;
-          if (event.request.headers.get('accept')?.includes('text/html')) {
-            return caches.match('/index.html');
+          if (event.request.mode === 'navigate') {
+            return caches.match('./index.html') || caches.match('./');
           }
+          return null;
         });
       })
   );

@@ -1,15 +1,21 @@
 {
-  "name": "EchoSpeak",
+  "name": "EchoSpeak — Local English & German Fluency Studio",
   "short_name": "EchoSpeak",
-  "description": "Master spoken English & German fluency, technical vocabulary, and workplace communication.",
+  "description": "Master spoken English & German fluency, technical vocabulary, and workplace communication with real-time AI speech evaluation.",
   "start_url": "./",
   "id": "./",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "background_color": "#070a12",
   "theme_color": "#0f172a",
-  "categories": ["education", "productivity", "business"],
+  "dir": "ltr",
+  "lang": "en",
+  "categories": [
+    "education",
+    "productivity",
+    "business"
+  ],
   "icons": [
     {
       "src": "icons/icon-192.png",
@@ -24,7 +30,7 @@
       "purpose": "any"
     },
     {
-      "src": "icons/icon-512.png",
+      "src": "icons/icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -40,6 +46,45 @@
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "icons/screenshot-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "EchoSpeak Desktop Studio"
+    },
+    {
+      "src": "icons/screenshot-mobile.png",
+      "sizes": "720x1280",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "EchoSpeak Mobile Studio"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Read Aloud Practice",
+      "short_name": "Read Aloud",
+      "description": "Practice speech with live diff scoring",
+      "url": "./#read-aloud",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Career Pro Studio",
+      "short_name": "Career Pro",
+      "description": "Vocational fluency for IT & Medical fields",
+      "url": "./#career-pro",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Shadowing Studio",
+      "short_name": "Shadowing",
+      "description": "Listen and repeat studio",
+      "url": "./#shadowing",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

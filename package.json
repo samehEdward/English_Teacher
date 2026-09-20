@@ -11,6 +11,7 @@
     "cap:open": "cap open android"
   },
   "devDependencies": {
+    "sharp": "^0.35.4",
     "vite": "^5.4.10"
   },
   "dependencies": {
