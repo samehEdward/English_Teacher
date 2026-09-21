@@ -140,6 +140,323 @@ export const VOCATIONAL_SCENARIOS = {
               followUp: 'Bitten Sie den Anwender höflich um die Fernwartungs-ID oder den Freigabecode.',
               arabicNotes: 'تذكر صيغة الاستئذان الرسمية في الألمانية: "Darf ich mich kurz aufschalten?" أو "Gestatten Sie mir, kurz per Fernwartung...".'
             }
+          },
+          {
+            speaker: 'Herr Dr. Weber',
+            avatar: '👨‍💻',
+            aiSpeech: 'Die Fernwartung läuft, Sie sollten meinen Bildschirm sehen. Ich verstehe allerdings von Netzwerken wenig — können Sie mir sagen, was Sie da gerade prüfen?',
+            suggestedResponses: [
+              'Sehr gerne. Ich sehe mir gerade die Routing-Tabelle an, also die Liste, welcher Datenverkehr durch den VPN-Tunnel geleitet wird. Und tatsächlich: Ihr internes Firmennetz wird derzeit nicht über den Tunnel geroutet. Deshalb funktioniert das öffentliche Internet, während interne Server nicht erreichbar sind.',
+              'Ich prüfe gerade die Routing-Tabelle auf fehlerhafte Einträge im Split-Tunneling-Profil und verifiziere die Metrik der Schnittstellen.',
+              'Das ist ziemlich kompliziert, das würde jetzt zu weit führen. Lassen Sie mich einfach kurz machen.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Ich verifiziere die Metrik der Schnittstellen im Split-Tunneling-Profil.',
+                refined: 'Ich sehe mir an, welcher Datenverkehr durch den VPN-Tunnel geleitet wird — Ihr internes Firmennetz läuft gerade nicht darüber.',
+                reasonAr: 'المستخدم صرّح بأنه لا يفهم الشبكات. إغراقه بالمصطلحات (Metrik, Split-Tunneling) ليس دليل كفاءة بل فشل في التواصل. اشرح بلغة بسيطة، واربط الشرح بالعَرَض الذي وصفه بنفسه.'
+              },
+              vocabTip: {
+                term: 'die Routing-Tabelle / der VPN-Tunnel / das interne Firmennetz',
+                ipa: '[diː ˈruːtɪŋˌtabɛlə]',
+                ar: 'جدول التوجيه / نفق الشبكة الافتراضية / الشبكة الداخلية للشركة'
+              },
+              followUp: 'Erklären Sie den Befund in einem Satz und kündigen Sie den nächsten Schritt an, bevor Sie etwas ändern.',
+              arabicNotes: 'قاعدة ذهبية في الدعم الفني الألماني: اشرح ما تفعله قبل أن تفعله على جهاز المستخدم (Ich kündige an, was ich tue)، فهذا يبني الثقة ويمنع القلق.'
+            }
+          },
+          {
+            speaker: 'Herr Dr. Weber',
+            avatar: '👨‍💻',
+            aiSpeech: 'Jetzt verstehe ich das. Das Netzlaufwerk ist wieder da, vielen Dank. Eine Kollegin aus meinem Team hatte heute früh übrigens genau dasselbe Problem.',
+            suggestedResponses: [
+              'Danke für den Hinweis, das ist sehr wichtig. Dann handelt es sich vermutlich nicht um einen Einzelfall, sondern um ein fehlerhaftes VPN-Profil nach dem Update von gestern. Ich lege einen Problem-Datensatz an, informiere das Netzwerkteam und wir spielen das korrigierte Profil zentral aus.',
+              'Gut zu wissen. Sagen Sie Ihrer Kollegin bitte, sie soll sich auch beim Service Desk melden, dann schauen wir uns das einzeln an.',
+              'Das kann Zufall sein. Ich schließe Ihr Ticket erst einmal, bei Ihnen läuft ja jetzt alles.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Das kann Zufall sein, ich schließe Ihr Ticket erst einmal.',
+                refined: 'Dann handelt es sich vermutlich nicht um einen Einzelfall. Ich lege einen Problem-Datensatz an und informiere das Netzwerkteam.',
+                reasonAr: 'بلاغان متطابقان في اليوم نفسه مؤشر على مشكلة جذرية (Problem) وليس حادثتين منفصلتين. إغلاق التذكرة لأن هذا المستخدم تحديداً يعمل الآن يترك بقية الفريق يعاني.'
+              },
+              vocabTip: {
+                term: 'der Einzelfall / der Problem-Datensatz / das Profil zentral ausspielen',
+                ipa: '[ˈaɪ̯nt͡sl̩ˌfal]',
+                ar: 'حالة فردية / سجل المشكلة الجذرية / نشر الملف مركزياً'
+              },
+              followUp: 'Dokumentieren Sie die Verknüpfung beider Meldungen und bieten Sie an, die Kollegin aktiv zu kontaktieren.',
+              arabicNotes: 'في إطار ITIL يُفرَّق بين Incident (حادثة فردية) وProblem (سبب جذري يولّد حوادث متعددة)؛ استخدام المصطلح الصحيح أمام مستخدم تقني يدل على احترافية.'
+            }
+          }
+        ]
+      },
+      {
+        id: 'it_epic_chart_de',
+        title: 'EPIC: Patientenakte nach Rechteänderung gesperrt (Intensivstation)',
+        level: 'B2',
+        persona: {
+          name: 'Frau Anja Brandt (Fachpflege Intensiv)',
+          role: 'Pflegekraft im Schichtwechsel',
+          avatar: '👩‍⚕️',
+          tone: 'Angespannt, unter Zeitdruck bei der Übergabe'
+        },
+        context: 'Eine Intensivpflegekraft kann in EPIC (Hyperspace) die Akte eines beatmeten Patienten nicht mehr öffnen. Sie erhält die Meldung „Kein Zugriff auf diese Behandlungseinheit". Die Schichtübergabe läuft bereits, die Vitalwerte müssen dokumentiert werden.',
+        steps: [
+          {
+            speaker: 'Frau Brandt',
+            avatar: '👩‍⚕️',
+            aiSpeech: 'Guten Tag, Intensivstation 2. Ich komme in EPIC nicht mehr in die Akte von meinem Beatmungspatienten. Es kommt nur „Kein Zugriff auf diese Behandlungseinheit". Ich muss aber jetzt die Übergabe dokumentieren!',
+            suggestedResponses: [
+              'Guten Tag, Frau Brandt. Ich kümmere mich sofort darum. Nennen Sie mir bitte Ihr EPIC-Benutzerkürzel und die Fallnummer des Patienten, dann prüfe ich umgehend Ihr Berechtigungsprofil.',
+              'Hallo, da müssen Sie ein Ticket aufmachen, dann schaut sich das jemand in den nächsten Stunden an.',
+              'Guten Tag. Haben Sie es schon mal mit Abmelden und wieder Anmelden probiert? Meistens hilft das schon.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Da müssen Sie ein Ticket aufmachen, dann schaut sich das jemand an.',
+                refined: 'Ich kümmere mich sofort darum. Nennen Sie mir bitte Ihr EPIC-Benutzerkürzel und die Fallnummer, dann prüfe ich Ihr Berechtigungsprofil.',
+                reasonAr: 'في بيئة المستشفى، إحالة الممرضة إلى فتح تذكرة أثناء تسليم وردية العناية المركزة تأخير غير مقبول. ابدأ بتأكيد التحرك الفوري (Ich kümmere mich sofort darum) ثم اطلب البيانات المحددة التي تمكّنك من الفحص.'
+              },
+              vocabTip: {
+                term: 'das Berechtigungsprofil / die Behandlungseinheit / die Fallnummer',
+                ipa: '[bəˈʁɛçtɪɡʊŋsproˌfiːl]',
+                ar: 'ملف الصلاحيات / وحدة العلاج (القسم) / رقم الحالة'
+              },
+              followUp: 'Prüfen Sie im EPIC-Administrationsbereich, ob der Anwenderin die richtige Behandlungseinheit (Kontext Intensivstation 2) zugeordnet ist.',
+              arabicNotes: 'نظام EPIC يربط الصلاحية بوحدة علاجية محددة (Behandlungseinheit)، لذلك قد يكون للمستخدم حساب سليم لكن بدون ربط بالقسم الصحيح بعد نقل الوردية.'
+            }
+          },
+          {
+            speaker: 'Frau Brandt',
+            avatar: '👩‍⚕️',
+            aiSpeech: 'Mein Kürzel ist a.brandt, die Fallnummer lautet 4471902. Gestern ging das noch problemlos. Ich wurde diese Woche von der Station 4 auf die Intensiv 2 versetzt.',
+            suggestedResponses: [
+              'Vielen Dank, das erklärt es. Ihr Profil ist noch der Station 4 zugeordnet. Ich hinterlege jetzt die Intensivstation 2 als Behandlungseinheit. Bitte melden Sie sich einmal komplett von Hyperspace ab und wieder an.',
+              'Okay, dann hat die Personalabteilung das wohl vergessen. Da kann ich leider nichts machen, das müssen die ändern.',
+              'Ich gebe Ihnen einfach Vollzugriff auf alle Stationen, dann haben wir das Problem nicht mehr.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Ich gebe Ihnen einfach Vollzugriff auf alle Stationen.',
+                refined: 'Ich hinterlege die Intensivstation 2 als zusätzliche Behandlungseinheit in Ihrem Profil.',
+                reasonAr: 'منح صلاحية كاملة (Vollzugriff) لحل سريع خرق لمبدأ الحد الأدنى من الصلاحيات ولحماية بيانات المرضى. امنح فقط الوحدة العلاجية المطلوبة، واشرح للمستخدم الخطوة التالية (إعادة تسجيل الدخول).'
+              },
+              vocabTip: {
+                term: 'die Versetzung / das Profil hinterlegen / sich neu anmelden',
+                ipa: '[ˈpʁoːfiːl hɪntɐˌleːɡn̩]',
+                ar: 'النقل بين الأقسام / حفظ الملف الشخصي / إعادة تسجيل الدخول'
+              },
+              followUp: 'Bitten Sie die Anwenderin, den Zugriff zu bestätigen, und dokumentieren Sie die Profiländerung im Ticket.',
+              arabicNotes: 'في الألمانية المهنية يُفضّل تفسير السبب للمستخدم بإيجاز (das erklärt es) لأنه يبني الثقة ويقلل تكرار البلاغ.'
+            }
+          },
+          {
+            speaker: 'Frau Brandt',
+            avatar: '👩‍⚕️',
+            aiSpeech: 'Einen Moment... ja, jetzt ist die Akte da. Aber was mache ich, wenn EPIC während der Nachtschicht komplett ausfällt? Dann stehe ich wieder ohne Dokumentation da.',
+            suggestedResponses: [
+              'Für diesen Fall gibt es das Ausfallkonzept: Über den BCA-Arbeitsplatz haben Sie lesenden Zugriff auf die letzten Patientendaten, und die Dokumentation erfolgt übergangsweise auf den Papierformularen der Station.',
+              'Das kommt eigentlich nie vor, machen Sie sich darüber mal keine Gedanken.',
+              'Dann rufen Sie einfach wieder hier an und wir schauen dann weiter.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Das kommt eigentlich nie vor, machen Sie sich keine Gedanken.',
+                refined: 'Für diesen Fall greift das Ausfallkonzept: lesender Zugriff über den BCA-Arbeitsplatz und Papierdokumentation als Rückfallebene.',
+                reasonAr: 'لا تُهوّن من قلق مشروع يتعلق بسلامة التوثيق. اذكر خطة الطوارئ المعتمدة (Ausfallkonzept) وسمِّ البديل العملي بوضوح، فهذا ما يطمئن الطاقم فعلياً.'
+              },
+              vocabTip: {
+                term: 'das Ausfallkonzept / die Rückfallebene / der Notfallarbeitsplatz (BCA)',
+                ipa: '[ˈaʊ̯sfalkɔnˌtsɛpt]',
+                ar: 'خطة التعطل / المستوى الاحتياطي / محطة العمل الطارئة'
+              },
+              followUp: 'Verweisen Sie auf die Kurzanleitung zum Ausfallkonzept im Intranet und bieten Sie eine Einweisung für das Team an.',
+              arabicNotes: 'في المستشفيات الألمانية، خطة التعطل (Ausfallkonzept) إلزامية قانونياً، ومعرفة الدعم الفني بها جزء أساسي من الكفاءة المهنية.'
+            }
+          }
+        ]
+      },
+      {
+        id: 'it_citrix_session_de',
+        title: 'Citrix: Veröffentlichte Anwendung startet nicht (Ghost-Sitzung)',
+        level: 'B2',
+        persona: {
+          name: 'Herr Dr. Jonas Riedel (Oberarzt Radiologie)',
+          role: 'Anwender im Homeoffice-Befunddienst',
+          avatar: '👨‍⚕️',
+          tone: 'Sachlich, aber ungeduldig'
+        },
+        context: 'Ein Oberarzt möchte aus dem Homeoffice über Citrix Workspace auf das Befundungssystem zugreifen. Die veröffentlichte Anwendung bleibt beim Start hängen; im Hintergrund existiert noch eine nicht sauber getrennte Sitzung vom Vortag (Ghost-Sitzung).',
+        steps: [
+          {
+            speaker: 'Dr. Riedel',
+            avatar: '👨‍⚕️',
+            aiSpeech: 'Riedel, Radiologie. Ich sitze im Homeoffice und komme über Citrix nicht ins Befundungssystem. Das Fenster erscheint kurz und verschwindet dann wieder. Ich habe heute Nachmittag noch zwölf Befunde offen.',
+            suggestedResponses: [
+              'Guten Tag, Herr Dr. Riedel. Das klingt nach einer nicht korrekt getrennten Sitzung. Darf ich Ihre aktiven Citrix-Sitzungen prüfen? Ich benötige dafür nur Ihr Anmeldekürzel.',
+              'Guten Tag. Haben Sie schon versucht, den Rechner komplett neu zu starten? Das löst so etwas meistens.',
+              'Da ist wahrscheinlich Ihr Internet zu Hause zu langsam. Prüfen Sie bitte zuerst Ihre WLAN-Verbindung.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Da ist wahrscheinlich Ihr Internet zu Hause zu langsam.',
+                refined: 'Das klingt nach einer nicht korrekt getrennten Sitzung. Darf ich Ihre aktiven Citrix-Sitzungen prüfen?',
+                reasonAr: 'تجنّب إلقاء اللوم على بيئة المستخدم (إنترنت المنزل) قبل الفحص، فهو يبدو تهرباً من المسؤولية. اطرح فرضية تقنية محددة واطلب الإذن بالفحص بصيغة مهذبة (Darf ich...?).'
+              },
+              vocabTip: {
+                term: 'die veröffentlichte Anwendung / die getrennte Sitzung / das Anmeldekürzel',
+                ipa: '[fɛɐ̯ˈʔœfn̩tlɪçtə ˈanvɛndʊŋ]',
+                ar: 'التطبيق المنشور / الجلسة المفصولة / اسم المستخدم المختصر'
+              },
+              followUp: 'Öffnen Sie die Citrix-Verwaltungskonsole und filtern Sie die Sitzungen nach dem Benutzernamen.',
+              arabicNotes: 'صيغة الاستئذان (Darf ich...?) قبل الدخول إلى حساب المستخدم معيار أساسي في الدعم الفني الألماني ويحمي خصوصية المستخدم.'
+            }
+          },
+          {
+            speaker: 'Dr. Riedel',
+            avatar: '👨‍⚕️',
+            aiSpeech: 'Mein Kürzel ist j.riedel. Ich war gestern Abend noch kurz drin, habe aber einfach den Laptop zugeklappt, weil ich zum Dienst musste.',
+            suggestedResponses: [
+              'Vielen Dank. Ich sehe hier tatsächlich eine seit gestern getrennte Sitzung auf einem Terminalserver. Ich beende diese jetzt kontrolliert, damit eine saubere neue Sitzung aufgebaut werden kann.',
+              'Das dürfen Sie so nicht machen, Sie müssen sich immer richtig abmelden. Ich beende das jetzt mal.',
+              'Ich starte einfach den Server neu, dann sind alle Sitzungen weg und es funktioniert wieder.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Ich starte einfach den Server neu, dann sind alle Sitzungen weg.',
+                refined: 'Ich beende Ihre getrennte Sitzung kontrolliert, damit eine saubere neue Sitzung aufgebaut werden kann.',
+                reasonAr: 'إعادة تشغيل الخادم إجراء يضرّ بكل المستخدمين الآخرين على نفس الخادم. الحل الصحيح إنهاء جلسة المستخدم المعنيّ فقط بشكل مضبوط (kontrolliert beenden).'
+              },
+              vocabTip: {
+                term: 'der Terminalserver / die Sitzung kontrolliert beenden / das Abmelden erzwingen',
+                ipa: '[ˈzɪtsʊŋ kɔntʁoˈliːɐ̯t bəˈʔɛndn̩]',
+                ar: 'الخادم الطرفي / إنهاء الجلسة بشكل مضبوط / فرض تسجيل الخروج'
+              },
+              followUp: 'Weisen Sie freundlich darauf hin, dass ein bewusstes Abmelden künftig solche Sitzungsreste vermeidet.',
+              arabicNotes: 'لاحظ الفرق: "Das dürfen Sie so nicht machen" نبرة توبيخية غير مناسبة لطبيب أول؛ الأفضل نصيحة لطيفة بعد حل المشكلة.'
+            }
+          },
+          {
+            speaker: 'Dr. Riedel',
+            avatar: '👨‍⚕️',
+            aiSpeech: 'Jetzt startet die Anwendung wieder. Allerdings ist die Darstellung sehr langsam, wenn ich die CT-Bilder durchscrolle. Liegt das auch an Citrix?',
+            suggestedResponses: [
+              'Für die Befundung großer Bildserien ist die normale Citrix-Sitzung nicht optimiert. Ich richte Ihnen den dedizierten Befundungs-Client mit erhöhter Grafikleistung ein und melde mich anschließend bei Ihnen.',
+              'Ja, Citrix ist halt immer etwas langsam, damit müssen Sie leider leben.',
+              'Das kann alles Mögliche sein. Schreiben Sie das bitte in ein neues Ticket, dann sehen wir weiter.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Citrix ist halt immer etwas langsam, damit müssen Sie leider leben.',
+                refined: 'Für große Bildserien richte ich Ihnen den dedizierten Befundungs-Client mit erhöhter Grafikleistung ein.',
+                reasonAr: 'لا تُنهِ المكالمة بقبول العجز (damit müssen Sie leben). قدّم حلاً بديلاً ملموساً والتزم بالمتابعة، فهذا جوهر الخدمة الاحترافية.'
+              },
+              vocabTip: {
+                term: 'die Bildserie / die Grafikleistung / der dedizierte Client',
+                ipa: '[ˈɡʁaːfɪkˌlaɪ̯stʊŋ]',
+                ar: 'سلسلة الصور الطبية / أداء الرسوميات / العميل المخصص'
+              },
+              followUp: 'Dokumentieren Sie die Performance-Anforderung und stimmen Sie die Umsetzung mit dem Client-Management ab.',
+              arabicNotes: 'الالتزام بالمتابعة (ich melde mich anschließend bei Ihnen) عنصر أساسي في اتفاقيات مستوى الخدمة ويجب أن يُقال صراحةً.'
+            }
+          }
+        ]
+      },
+      {
+        id: 'it_patient_risk_de',
+        title: 'Patientengefährdung: Medikamenten-Modul im OP ausgefallen (Prio 1)',
+        level: 'C1',
+        persona: {
+          name: 'Herr Dr. Markus Lehmann (Leitender Anästhesist)',
+          role: 'Melder einer akuten Störung im OP-Bereich',
+          avatar: '🧑‍⚕️',
+          tone: 'Sehr bestimmt, akuter Handlungsdruck'
+        },
+        context: 'Im OP-Trakt lässt sich das Modul zur Medikamentenverordnung nicht mehr aufrufen. Zwei Eingriffe laufen bereits, ein dritter ist angesetzt. Ohne das Modul sind Dosierungen und Allergien nicht einsehbar — es besteht unmittelbare Patientengefährdung. Der Anruf muss sofort als Prio-1-Störung eskaliert werden.',
+        steps: [
+          {
+            speaker: 'Dr. Lehmann',
+            avatar: '🧑‍⚕️',
+            aiSpeech: 'Lehmann, Anästhesie, OP-Trakt West. Wir haben hier ein ernstes Problem: Das Medikamenten-Modul lädt nicht mehr. Ich sehe bei laufender Narkose weder Dosierungen noch Allergien. Das ist eine Patientengefährdung!',
+            suggestedResponses: [
+              'Herr Dr. Lehmann, ich stufe das hiermit als Prio-1-Störung mit Patientengefährdung ein und alarmiere sofort die Rufbereitschaft. Bleiben Sie bitte in der Leitung, während ich die Eskalation auslöse.',
+              'Verstanden, das klingt dringend. Ich lege Ihnen ein Ticket mit hoher Priorität an, jemand meldet sich dann schnellstmöglich bei Ihnen.',
+              'Guten Tag. Können Sie bitte zuerst prüfen, ob es nur an Ihrem Rechner liegt oder auch an den anderen Arbeitsplätzen?'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Ich lege Ihnen ein Ticket mit hoher Priorität an, jemand meldet sich schnellstmöglich.',
+                refined: 'Ich stufe das als Prio-1-Störung mit Patientengefährdung ein und alarmiere sofort die Rufbereitschaft.',
+                reasonAr: 'كلمة Patientengefährdung مصطلح تصنيفي مُلزِم: بمجرد ذكرها يجب تجاوز المسار العادي للتذاكر والانتقال فوراً إلى التصعيد وإنذار فريق الطوارئ. صياغة "jemand meldet sich" غامضة وغير مقبولة هنا.'
+              },
+              vocabTip: {
+                term: 'die Patientengefährdung / die Prio-1-Störung / die Rufbereitschaft alarmieren',
+                ipa: '[patsiˈɛntn̩ɡəˌfɛːɐ̯dʊŋ]',
+                ar: 'تعريض المريض للخطر / عطل من الأولوية القصوى / إنذار فريق الاستدعاء'
+              },
+              followUp: 'Lösen Sie parallel zur Meldung die technische Eskalation aus und halten Sie die Leitung offen.',
+              arabicNotes: 'في المستشفيات الألمانية، تصنيف Prio 1 يفرض زمن استجابة مُحدّداً في اتفاقية مستوى الخدمة، ويُلزم الدعم بإبلاغ فريق الاستدعاء دون انتظار موافقة إضافية.'
+            }
+          },
+          {
+            speaker: 'Dr. Lehmann',
+            avatar: '🧑‍⚕️',
+            aiSpeech: 'Gut. Was mache ich in der Zwischenzeit? Ich kann die Narkose nicht unterbrechen und brauche jetzt die Allergiedaten des Patienten.',
+            suggestedResponses: [
+              'Bitte wechseln Sie auf den Notfallarbeitsplatz im OP-Leitstand: Dort steht der lesende Notfallzugriff auf die Medikations- und Allergiedaten zur Verfügung. Ich bleibe in der Leitung, bis Sie die Daten vor sich haben.',
+              'Fragen Sie bitte auf der Station nach, ob dort jemand die Daten vorlesen kann.',
+              'Warten Sie bitte kurz, die Kollegen aus der Fachabteilung melden sich sicher gleich bei Ihnen.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Warten Sie kurz, die Kollegen melden sich sicher gleich.',
+                refined: 'Bitte wechseln Sie auf den Notfallarbeitsplatz: Dort steht der lesende Notfallzugriff auf die Allergiedaten zur Verfügung.',
+                reasonAr: 'أثناء خطر فعلي على المريض، الانتظار ليس حلاً. قدّم مساراً بديلاً فورياً وقابلاً للتنفيذ (Notfallarbeitsplatz)، وابقَ على الخط حتى يتأكد الطبيب من حصوله على البيانات.'
+              },
+              vocabTip: {
+                term: 'der Notfallzugriff / der OP-Leitstand / die Medikationsdaten',
+                ipa: '[ˈnoːtfalˌt͡suːɡʁɪf]',
+                ar: 'وصول الطوارئ / غرفة التحكم بالعمليات / بيانات الأدوية'
+              },
+              followUp: 'Begleiten Sie den Anwender Schritt für Schritt, bis der Notfallzugriff nachweislich funktioniert.',
+              arabicNotes: 'البقاء على الخط (Ich bleibe in der Leitung) ليس مجاملة بل إجراء سلامة: يضمن عدم انقطاع المسار البديل قبل التأكد من نجاحه.'
+            }
+          },
+          {
+            speaker: 'Dr. Lehmann',
+            avatar: '🧑‍⚕️',
+            aiSpeech: 'Der Notfallzugriff funktioniert, ich habe die Allergien. Ich gehe davon aus, dass das nachher sauber aufgearbeitet wird — so etwas darf im OP nicht passieren.',
+            suggestedResponses: [
+              'Selbstverständlich. Der Vorfall wird als Prio-1-Störung mit Patientengefährdung vollständig dokumentiert und geht in die Nachbereitung mit Ursachenanalyse. Sie erhalten eine schriftliche Rückmeldung zum Ergebnis.',
+              'Ja, ich schreibe das ins Ticket, dann ist es erledigt.',
+              'Da müssten Sie sich bitte an die Klinikleitung wenden, dafür sind wir nicht zuständig.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Ja, ich schreibe das ins Ticket, dann ist es erledigt.',
+                refined: 'Der Vorfall wird vollständig dokumentiert und geht in die Nachbereitung mit Ursachenanalyse; Sie erhalten eine schriftliche Rückmeldung.',
+                reasonAr: 'حادثة تعريض مريض للخطر لا تُغلق بتدوين ملاحظة. الصياغة المهنية تذكر ثلاثة عناصر: التوثيق الكامل، وتحليل السبب الجذري، والتغذية الراجعة المكتوبة للمُبلِّغ.'
+              },
+              vocabTip: {
+                term: 'die Nachbereitung / die Ursachenanalyse / die Dokumentationspflicht',
+                ipa: '[ˈuːɐ̯zaxn̩ʔanaˌlyːzə]',
+                ar: 'المعالجة اللاحقة / تحليل السبب الجذري / واجب التوثيق'
+              },
+              followUp: 'Erstellen Sie den Störungsbericht und melden Sie den Vorfall an das klinische Risikomanagement (CIRS).',
+              arabicNotes: 'نظام CIRS لإدارة المخاطر السريرية إلزامي في المستشفيات الألمانية؛ ذكرُه صراحةً يُظهر إلماماً بالإطار التنظيمي ويطمئن الطبيب المُبلِّغ.'
+            }
           }
         ]
       }
@@ -244,6 +561,323 @@ export const VOCATIONAL_SCENARIOS = {
               },
               followUp: 'Schlagen Sie die Ursachenanalyse vor: Reagenziencharge, Verfallsdatum oder Kalibrierungsdrift.',
               arabicNotes: 'وفق معايير ISO 15189 وضوابط Rili-BÄK، فإن خرق قاعدة 1:3s يعني خطأً عشوائياً أو نظامياً جسيماً يفرض إيقاف إطلاق نتائج المرضى فوراً.'
+            }
+          },
+          {
+            speaker: 'Frau Dr. Weber',
+            avatar: '👩‍🔬',
+            aiSpeech: 'Gut, dass Sie gesperrt haben. Welche Ursachen haben Sie bereits eingegrenzt, bevor wir über eine Freigabe sprechen?',
+            suggestedResponses: [
+              'Ich habe Charge, Verfallsdatum und Lagerung des Kontrollmaterials geprüft und die Messung mit einer frisch angesetzten Kontrolle wiederholt — die Abweichung bleibt bestehen. Die Reagenziencharge wurde gestern gewechselt, deshalb vermute ich dort die Ursache und nicht im Kontrollmaterial.',
+              'Ich habe es einfach nochmal gemessen, beim zweiten Mal war der Wert besser. Wahrscheinlich war es ein Ausreißer.',
+              'Ich wollte zuerst neu kalibrieren, dann hätte sich das vermutlich von selbst erledigt.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Beim zweiten Mal war der Wert besser, wahrscheinlich war es ein Ausreißer.',
+                refined: 'Kontrollmaterial geprüft und mit frischer Kontrolle wiederholt — die Abweichung bleibt. Die Reagenziencharge wurde gestern gewechselt.',
+                reasonAr: 'إعادة القياس حتى تظهر نتيجة مقبولة ("testing into compliance") مخالفة جسيمة لضبط الجودة. المطلوب تضييق السبب بشكل منهجي: مادة الضبط، ثم الكاشف، ثم المعايرة — وذكر التغيير الذي سبق الانحراف.'
+              },
+              vocabTip: {
+                term: 'das Kontrollmaterial / die Abweichung eingrenzen / die Reagenziencharge',
+                ipa: '[kɔnˈtʁɔlmateˌʁi̯aːl]',
+                ar: 'مادة الضبط / تضييق نطاق الانحراف / دفعة الكاشف'
+              },
+              followUp: 'Dokumentieren Sie jede geprüfte Ursache mit Ergebnis, auch die ausgeschlossenen.',
+              arabicNotes: 'توثيق الأسباب المستبعدة لا يقل أهمية عن السبب المؤكد، لأنه يثبت للمدقق أن التحليل كان منهجياً وليس تخميناً.'
+            }
+          },
+          {
+            speaker: 'Frau Dr. Weber',
+            avatar: '👩‍🔬',
+            aiSpeech: 'Einverstanden, das klingt schlüssig. Wir setzen die Vorcharge wieder ein. Und was ist mit den Patientenproben, die seit der letzten gültigen Kontrolle gelaufen sind?',
+            suggestedResponses: [
+              'Die müssen retrospektiv bewertet werden. Ich ermittle alle Glukose-Ergebnisse seit der letzten gültigen Qualitätskontrolle, halte sie zurück und messe sie nach erfolgreicher Kontrolle erneut. Bereits übermittelte Befunde melden wir der Station aktiv als korrigierte Befunde.',
+              'Die sind zum Glück schon rausgegangen, da können wir jetzt ohnehin nichts mehr machen.',
+              'Ich würde sagen, wir lassen die durch — die Abweichung war ja nur bei der Kontrolle, nicht bei den Patienten.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Wir lassen die durch, die Abweichung war ja nur bei der Kontrolle.',
+                refined: 'Alle Ergebnisse seit der letzten gültigen Kontrolle werden zurückgehalten, erneut gemessen und bereits übermittelte Befunde aktiv korrigiert.',
+                reasonAr: 'هذه هي النتيجة الجوهرية لخرق قاعدة ويستغارد: كل نتائج المرضى منذ آخر ضبط جودة صالح تقع في نطاق مشكوك فيه. عبارة "الانحراف كان في الضبط فقط" خطأ مفاهيمي خطير.'
+              },
+              vocabTip: {
+                term: 'retrospektiv bewerten / Befunde zurückhalten / der korrigierte Befund',
+                ipa: '[ʁetʁospɛkˈtiːf bəˈveːɐ̯tn̩]',
+                ar: 'التقييم بأثر رجعي / حجز النتائج / التقرير المصحَّح'
+              },
+              followUp: 'Legen Sie den Zeitraum seit der letzten gültigen Kontrolle fest und stimmen Sie die Nachmeldung mit der Laborleitung ab.',
+              arabicNotes: 'مصطلح "korrigierter Befund" مُلزِم قانونياً: إرسال تصحيح فعّال للقسم الطالب واجب، ولا يكفي تعديل النتيجة بصمت في النظام.'
+            }
+          }
+        ]
+      },
+      {
+        id: 'lab_centrifuge_de',
+        title: 'Zentrifuge: Unwucht & falsches Protokoll (Präanalytik)',
+        level: 'B2',
+        persona: {
+          name: 'Frau Melanie Hoffmann (Auszubildende MTLA, 2. Lehrjahr)',
+          role: 'Auszubildende in der Probenannahme',
+          avatar: '👩‍🔬',
+          tone: 'Unsicher, sichtlich erschrocken'
+        },
+        context: 'Eine Auszubildende hat die Tischzentrifuge einseitig beladen. Das Gerät hat während des Laufs stark vibriert und sich mit Fehlermeldung abgeschaltet. Zusätzlich wurden Citrat-Röhrchen für die Gerinnungsdiagnostik mit dem Standardprogramm für Serum zentrifugiert. Sie müssen die Auszubildende fachlich anleiten, ohne sie bloßzustellen.',
+        steps: [
+          {
+            speaker: 'Frau Hoffmann',
+            avatar: '👩‍🔬',
+            aiSpeech: 'Entschuldigung, die Zentrifuge hat ganz laut gerattert und sich dann einfach ausgeschaltet. Ich wollte gerade den Deckel aufmachen und nachsehen. Habe ich etwas kaputt gemacht?',
+            suggestedResponses: [
+              'Bitte öffnen Sie den Deckel noch nicht — erst wenn der Rotor vollständig steht. Das Rattern deutet auf eine Unwucht hin. Wir schauen gemeinsam nach, wie die Röhrchen eingesetzt wurden.',
+              'Das ist nicht so schlimm, machen Sie ruhig auf und stellen Sie die Röhrchen einfach neu rein.',
+              'Sie hätten wirklich aufpassen müssen. Solche Fehler dürfen in einem Labor nicht passieren.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Das ist nicht so schlimm, machen Sie ruhig auf.',
+                refined: 'Bitte öffnen Sie den Deckel erst, wenn der Rotor vollständig steht. Das Rattern deutet auf eine Unwucht hin.',
+                reasonAr: 'السلامة أولاً: فتح غطاء الطاردة قبل توقف الدوار تماماً خطر إصابة حقيقي. ابدأ بالتعليمة الوقائية الفورية بصيغة مهذبة (Bitte öffnen Sie... noch nicht) ثم اشرح السبب التقني.'
+              },
+              vocabTip: {
+                term: 'die Unwucht / der Rotor / symmetrisch beladen',
+                ipa: '[diː ˈʊnvʊxt]',
+                ar: 'اختلال التوازن / الدوار / التحميل المتماثل'
+              },
+              followUp: 'Erklären Sie das Prinzip: gleich schwere Röhrchen immer paarweise gegenüberliegend einsetzen, notfalls mit einem Ausgleichsröhrchen.',
+              arabicNotes: 'في الألمانية المهنية، توجيه المتدرب يبدأ بالفعل الوقائي ثم التعليل، مع استخدام صيغة "wir" (wir schauen gemeinsam nach) لتقليل الإحراج والحفاظ على الثقة.'
+            }
+          },
+          {
+            speaker: 'Frau Hoffmann',
+            avatar: '👩‍🔬',
+            aiSpeech: 'Der Rotor steht jetzt. Ich hatte vier Röhrchen nur auf einer Seite eingesetzt. Und ich habe die blauen Citrat-Röhrchen mit dem normalen Serum-Programm laufen lassen — ist das ein Problem?',
+            suggestedResponses: [
+              'Ja, das ist leider relevant. Gerinnungsproben brauchen ein eigenes Protokoll, in der Regel 1500 g für 10 Minuten. Mit dem Serum-Programm ist das plättchenarme Plasma nicht sicher gewährleistet, deshalb müssen wir eine Neuabnahme veranlassen.',
+              'Nein, das macht nichts, Hauptsache die Röhrchen waren überhaupt in der Zentrifuge.',
+              'Lassen Sie die Proben einfach nochmal mit dem richtigen Programm laufen, dann passt das schon.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Lassen Sie die Proben einfach nochmal mit dem richtigen Programm laufen.',
+                refined: 'Mit dem Serum-Programm ist das plättchenarme Plasma nicht sicher gewährleistet; wir müssen eine Neuabnahme veranlassen.',
+                reasonAr: 'إعادة الطرد المركزي لا تُصلح عينة تخثر عولجت ببروتوكول خاطئ، لأن تفعيل الصفائح يكون قد حدث بالفعل. المصطلح الحاسم هو "Neuabnahme" أي سحب عينة جديدة.'
+              },
+              vocabTip: {
+                term: 'das plättchenarme Plasma / die Neuabnahme / die Relativzentrifugalbeschleunigung (RZB)',
+                ipa: '[ˈplɛtçn̩ˌʔaːʁmə ˈplasma]',
+                ar: 'البلازما فقيرة الصفائح / إعادة سحب العينة / تسارع الطرد المركزي النسبي'
+              },
+              followUp: 'Informieren Sie die entnehmende Station über die notwendige Neuabnahme und begründen Sie sie präanalytisch.',
+              arabicNotes: 'في الألمانية المخبرية تُذكر سرعة الطرد بوحدة g (RZB) وليس بعدد اللفات فقط، لأن قطر الدوار يختلف بين الأجهزة.'
+            }
+          },
+          {
+            speaker: 'Frau Hoffmann',
+            avatar: '👩‍🔬',
+            aiSpeech: 'Das ist mir sehr unangenehm. Muss ich das irgendwo melden, oder bleibt das unter uns?',
+            suggestedResponses: [
+              'Das gehört dokumentiert, und das ist völlig normal: Wir erfassen den Vorfall im Gerätebuch, lassen den Rotor vor der nächsten Nutzung prüfen und halten die Neuabnahme in der Präanalytik-Dokumentation fest. Fehler zu melden ist Teil der Qualitätssicherung, nicht ein Vorwurf.',
+              'Nein, das bleibt unter uns, sonst gibt es nur unnötigen Ärger mit der Laborleitung.',
+              'Melden müssen Sie das selbst, ich bin dafür nicht zuständig.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Das bleibt unter uns, sonst gibt es nur Ärger.',
+                refined: 'Wir erfassen den Vorfall im Gerätebuch und halten die Neuabnahme in der Präanalytik-Dokumentation fest.',
+                reasonAr: 'إخفاء الحادثة مخالفة لنظام الجودة. الصياغة المهنية تطمئن المتدرب بأن التوثيق إجراء روتيني وليس عقوبة (Teil der Qualitätssicherung, nicht ein Vorwurf).'
+              },
+              vocabTip: {
+                term: 'das Gerätebuch / die Qualitätssicherung / die Präanalytik',
+                ipa: '[ɡəˈʁɛːtəˌbuːx]',
+                ar: 'سجل الجهاز / ضمان الجودة / مرحلة ما قبل التحليل'
+              },
+              followUp: 'Tragen Sie den Vorfall im Gerätebuch ein und melden Sie die Rotorprüfung an die Gerätebetreuung.',
+              arabicNotes: 'ثقافة الإبلاغ عن الأخطاء (Fehlerkultur) ركن أساسي في معايير ISO 15189؛ التعبير عنها بوضوح يطمئن الزميل الأقل خبرة.'
+            }
+          }
+        ]
+      },
+      {
+        id: 'lab_hygiene_de',
+        title: 'Hygiene: PSA-Verstoß & Probenverschüttung (Schutzstufe 2)',
+        level: 'B2',
+        persona: {
+          name: 'Herr Tobias Frank (Praktikant aus der Verwaltung)',
+          role: 'Fachfremder Besucher im Laborbereich',
+          avatar: '🧑‍💼',
+          tone: 'Freundlich, aber ahnungslos'
+        },
+        context: 'Ein Praktikant aus der Verwaltung betritt ohne Kittel und Handschuhe den Laborbereich der Schutzstufe 2, um eine Unterschrift einzuholen. Dabei stößt er ein Röhrchen mit potenziell infektiösem Material um. Sie müssen ihn freundlich, aber konsequent aus dem Bereich führen und die Flächendesinfektion korrekt durchführen.',
+        steps: [
+          {
+            speaker: 'Herr Frank',
+            avatar: '🧑‍💼',
+            aiSpeech: 'Hallo! Entschuldigen Sie die Störung — ich bräuchte nur kurz eine Unterschrift von Ihnen für die Materialbestellung. Ist das schnell möglich?',
+            suggestedResponses: [
+              'Guten Tag, Herr Frank. Ich unterschreibe Ihnen das gerne, aber bitte treten Sie kurz zurück in den Flur: Dieser Bereich ist Schutzstufe 2 und darf nur mit persönlicher Schutzausrüstung betreten werden. Ich komme sofort zu Ihnen heraus.',
+              'Klar, kommen Sie einfach rein, das dauert ja nur eine Sekunde.',
+              'Sie dürfen hier nicht rein! Haben Sie das Schild an der Tür nicht gelesen?'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Sie dürfen hier nicht rein! Haben Sie das Schild nicht gelesen?',
+                refined: 'Bitte treten Sie kurz zurück in den Flur: Dieser Bereich ist Schutzstufe 2 und erfordert persönliche Schutzausrüstung. Ich komme sofort heraus.',
+                reasonAr: 'الحزم لا يعني الفظاظة. اجمع بين ثلاثة عناصر: طلب مهذب بالخروج، سبب موضوعي (Schutzstufe 2)، وحلّ بديل فوري (Ich komme zu Ihnen heraus) حتى لا يشعر الزائر بالرفض.'
+              },
+              vocabTip: {
+                term: 'die persönliche Schutzausrüstung (PSA) / die Schutzstufe 2 / der Zutritt',
+                ipa: '[pɛɐ̯ˈzøːnlɪçə ˈʃʊt͡sʔaʊ̯sˌʁʏstʊŋ]',
+                ar: 'معدات الوقاية الشخصية / مستوى الأمان الحيوي 2 / الدخول'
+              },
+              followUp: 'Bieten Sie an, die Unterschrift außerhalb des Laborbereichs zu leisten, und weisen Sie freundlich auf die Zutrittsregelung hin.',
+              arabicNotes: 'صيغة "Bitte treten Sie kurz zurück" أمر مهذب باستخدام Bitte + Sie، وهي الصيغة المعيارية لفرض قاعدة سلامة دون إهانة المخاطب.'
+            }
+          },
+          {
+            speaker: 'Herr Frank',
+            avatar: '🧑‍💼',
+            aiSpeech: 'Oh nein, entschuldigen Sie! Ich bin gerade gegen das Gestell gekommen, da ist ein Röhrchen umgefallen und ausgelaufen. Soll ich das schnell mit einem Papiertuch aufwischen?',
+            suggestedResponses: [
+              'Bitte fassen Sie nichts an und verlassen Sie den Bereich. Ich übernehme das mit Schutzausrüstung: Die Fläche wird zuerst mit saugfähigem Material abgedeckt, dann mit Flächendesinfektionsmittel getränkt und die Einwirkzeit abgewartet.',
+              'Ja, nehmen Sie ruhig ein Papiertuch, aber waschen Sie sich danach gründlich die Hände.',
+              'Lassen Sie es einfach liegen, das trocknet von selbst und wir machen das später.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Nehmen Sie ruhig ein Papiertuch und waschen Sie sich danach die Hände.',
+                refined: 'Bitte fassen Sie nichts an. Ich übernehme das mit Schutzausrüstung: abdecken, mit Flächendesinfektionsmittel tränken, Einwirkzeit abwarten.',
+                reasonAr: 'مسح المادة المعدية بمنديل ينشرها ويعرّض الشخص للخطر. البروتوكول الصحيح ثلاث خطوات مرتبة: التغطية، ثم التشريب بالمطهر، ثم انتظار زمن التأثير (Einwirkzeit).'
+              },
+              vocabTip: {
+                term: 'das Flächendesinfektionsmittel / die Einwirkzeit / saugfähiges Material',
+                ipa: '[ˈaɪ̯nvɪʁkˌt͡saɪ̯t]',
+                ar: 'مطهر الأسطح / زمن التأثير / مادة ماصة'
+              },
+              followUp: 'Entsorgen Sie das kontaminierte Material im infektiösen Abfall und dokumentieren Sie den Vorfall.',
+              arabicNotes: 'مصطلح Einwirkzeit جوهري: المطهر لا يعمل فوراً، بل يحتاج زمناً محدداً من الشركة المصنّعة، وتجاهله خطأ شائع.'
+            }
+          },
+          {
+            speaker: 'Herr Frank',
+            avatar: '🧑‍💼',
+            aiSpeech: 'Ich habe das Gestell vorhin kurz angefasst. Reicht es, wenn ich mir gleich die Hände wasche?',
+            suggestedResponses: [
+              'In diesem Fall ist eine hygienische Händedesinfektion erforderlich, nicht nur Waschen: Nehmen Sie das Desinfektionsmittel aus dem Spender am Ausgang, verreiben Sie es vollständig und beachten Sie die Einwirkzeit von dreißig Sekunden.',
+              'Ja, Händewaschen mit Seife reicht in so einem Fall völlig aus.',
+              'Machen Sie sich keine Sorgen, das war bestimmt nichts Ansteckendes.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Händewaschen mit Seife reicht völlig aus.',
+                refined: 'Hier ist eine hygienische Händedesinfektion erforderlich: vollständig verreiben und die Einwirkzeit von dreißig Sekunden beachten.',
+                reasonAr: 'فرق جوهري: Händewaschen (غسل) يزيل الأوساخ، أما Händedesinfektion (تطهير) فيقتل الممرضات. بعد تماس محتمل مع مادة معدية، التطهير هو الإجراء الصحيح.'
+              },
+              vocabTip: {
+                term: 'die hygienische Händedesinfektion / der Spender / verreiben',
+                ipa: '[hyˈɡieːnɪʃə ˈhɛndədɛsʔɪnfɛkˌt͡si̯oːn]',
+                ar: 'التطهير الصحي لليدين / الموزع / الفرك حتى الامتصاص'
+              },
+              followUp: 'Verweisen Sie auf die fünf Indikationen der Händehygiene und den Hygieneplan am Eingang.',
+              arabicNotes: 'معيار منظمة الصحة العالمية "الخمس لحظات لنظافة اليدين" (die fünf Momente der Händehygiene) معتمد في خطط النظافة الألمانية.'
+            }
+          }
+        ]
+      },
+      {
+        id: 'lab_calibration_de',
+        title: 'Kalibrierung: Fehlgeschlagene Kalibrierkurve nach Chargenwechsel',
+        level: 'C1',
+        persona: {
+          name: 'Herr Stefan Bauer (Applikationsspezialist, Gerätehersteller)',
+          role: 'Externer Servicetechniker am Telefon',
+          avatar: '👨‍🔧',
+          tone: 'Strukturiert, stellt gezielte Rückfragen'
+        },
+        context: 'Nach dem Wechsel auf eine neue Reagenzcharge schlägt die Kalibrierung des Parameters ALT am klinisch-chemischen Analysegerät wiederholt fehl (Fehlercode CAL-317). Der Parameter ist gesperrt, Patientenproben stauen sich. Sie rufen die Hotline des Herstellers an und müssen den Sachverhalt präzise und strukturiert schildern.',
+        steps: [
+          {
+            speaker: 'Herr Bauer',
+            avatar: '👨‍🔧',
+            aiSpeech: 'Bauer, technischer Support. Sie haben ein Problem mit einer Kalibrierung gemeldet — schildern Sie mir bitte kurz, was genau passiert.',
+            suggestedResponses: [
+              'Guten Tag, Herr Bauer. Bei uns schlägt seit heute Morgen die Kalibrierung für den Parameter ALT fehl, Fehlercode CAL-317. Ausgelöst wurde es durch den Wechsel auf die neue Reagenzcharge; der Parameter ist derzeit gesperrt.',
+              'Guten Tag. Unser Gerät macht Probleme mit der Kalibrierung, es geht einfach nicht durch. Können Sie da mal draufschauen?',
+              'Hallo, wir haben hier einen Fehler und brauchen dringend jemanden vor Ort, sonst kommen wir nicht weiter.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Unser Gerät macht Probleme mit der Kalibrierung, es geht einfach nicht durch.',
+                refined: 'Die Kalibrierung für den Parameter ALT schlägt fehl, Fehlercode CAL-317, ausgelöst durch den Wechsel auf die neue Reagenzcharge.',
+                reasonAr: 'عند الاتصال بالدعم الفني للشركة المصنّعة، اذكر أربعة عناصر في جملة واحدة: المَعلَم المتأثر، رمز الخطأ، الحدث المُطلِق، والحالة الراهنة. الوصف الغامض يطيل المكالمة ويؤخر الحل.'
+              },
+              vocabTip: {
+                term: 'die Kalibrierung schlägt fehl / die Reagenzcharge / der Parameter ist gesperrt',
+                ipa: '[kaliˈbʁiːʁʊŋ ʃlɛːkt feːl]',
+                ar: 'فشل المعايرة / دفعة الكاشف / المَعلَم موقوف'
+              },
+              followUp: 'Halten Sie Gerätetyp, Seriennummer und die Chargennummer des Reagenzes für die Rückfragen bereit.',
+              arabicNotes: 'في المكالمات التقنية الألمانية يُتوقع منك تقديم المعلومات بترتيب منطقي دون أن تُسأل، فهذا مؤشر على الكفاءة المهنية.'
+            }
+          },
+          {
+            speaker: 'Herr Bauer',
+            avatar: '👨‍🔧',
+            aiSpeech: 'Verstanden. Was haben Sie bereits geprüft? Und wie verhält sich die Kalibrierkurve — sehen Sie eine Drift oder liegt der Blank-Wert außerhalb?',
+            suggestedResponses: [
+              'Wir haben Verfallsdatum und Lagerung der Kalibratoren kontrolliert, die Chargendaten neu eingelesen und die Kalibrierung zweimal wiederholt. Der Blank-Wert liegt deutlich über der Toleranzgrenze, die Kurve zeigt zusätzlich eine Drift im oberen Messbereich.',
+              'Wir haben es ein paar Mal probiert, aber es ging nicht. Genauer habe ich nicht nachgesehen.',
+              'Ich glaube, die Kalibratoren sind noch in Ordnung, aber sicher bin ich mir nicht.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Wir haben es ein paar Mal probiert, aber es ging nicht.',
+                refined: 'Verfallsdatum und Lagerung geprüft, Chargendaten neu eingelesen, zweimal wiederholt; der Blank-Wert liegt über der Toleranzgrenze.',
+                reasonAr: 'عدّد ما فحصته بالفعل بصيغة قائمة موجزة. هذا يمنع الفني من تكرار أسئلة بديهية ويُظهر أنك أجريت التشخيص الأولي بشكل منهجي.'
+              },
+              vocabTip: {
+                term: 'die Kalibrierkurve / der Blank-Wert / die Toleranzgrenze / die Drift',
+                ipa: '[kaliˈbʁiːɐ̯ˌkʊʁvə]',
+                ar: 'منحنى المعايرة / قيمة الفراغ / حد التسامح / الانحراف التدريجي'
+              },
+              followUp: 'Bieten Sie an, das Kalibrierprotokoll und die Kurve als Ausdruck oder Export zu übermitteln.',
+              arabicNotes: 'المصطلح Drift يصف انزياحاً تدريجياً في القياس مع الزمن، ويُميَّز عن الخطأ العشوائي المفاجئ؛ التفريق بينهما مهم في التشخيص.'
+            }
+          },
+          {
+            speaker: 'Herr Bauer',
+            avatar: '👨‍🔧',
+            aiSpeech: 'Das klingt nach einem Problem mit der Reagenzcharge selbst. Ich würde mich per Fernzugriff aufschalten und parallel eine Ersatzcharge veranlassen. Passt Ihnen das?',
+            suggestedResponses: [
+              'Sehr gerne. Ich benötige dafür bitte eine Ticketnummer und ein verbindliches Zeitfenster. Zur Einordnung: Der Parameter ist seit heute Morgen gesperrt, und wir müssen ab Mittag auf Fremdvergabe ausweichen.',
+              'Ja, machen Sie einfach, wir warten dann so lange.',
+              'Können Sie das nicht sofort machen? Wir haben hier wirklich keine Zeit für so etwas.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Ja, machen Sie einfach, wir warten dann so lange.',
+                refined: 'Ich benötige eine Ticketnummer und ein verbindliches Zeitfenster. Der Parameter ist gesperrt, ab Mittag müssen wir auf Fremdvergabe ausweichen.',
+                reasonAr: 'اختم المكالمة بثلاثة عناصر: رقم التذكرة للتتبّع، نافذة زمنية مُلزِمة، وبيان الأثر التشغيلي. ذكر التحويل الخارجي (Fremdvergabe) يوضّح إلحاح الحالة دون رفع الصوت.'
+              },
+              vocabTip: {
+                term: 'der Fernzugriff / das Zeitfenster / die Fremdvergabe',
+                ipa: '[ˈfɛʁnt͡suːɡʁɪf]',
+                ar: 'الوصول عن بُعد / النافذة الزمنية / التحويل إلى مختبر خارجي'
+              },
+              followUp: 'Dokumentieren Sie Ticketnummer, Gesprächspartner und Uhrzeit im Gerätebuch.',
+              arabicNotes: 'طلب Ticketnummer وZeitfenster صراحةً ممارسة معيارية في التعامل مع موردي الأجهزة، وتحمي المختبر عند التدقيق.'
             }
           }
         ]
@@ -354,6 +988,323 @@ export const VOCATIONAL_SCENARIOS = {
               followUp: 'Guide the user on accepting the remote screen-sharing prompt.',
               arabicNotes: 'تأكد دائماً من نطق المصطلحات التقنية بدقة ووضوح في بيئات العمل متعددة الجنسيات.'
             }
+          },
+          {
+            speaker: 'Mr. Miller',
+            avatar: '👨‍💻',
+            aiSpeech: 'The remote session is up, you should be seeing my screen. I do not know much about networking though — could you tell me what you are actually looking at?',
+            suggestedResponses: [
+              'Of course. I am looking at the routing table, which is the list of what traffic goes through the VPN tunnel. And there it is: your internal company network is not currently being routed through the tunnel. That is why public websites work while the internal servers time out.',
+              'I am checking the routing table for faulty entries in the split-tunnelling profile and verifying the interface metrics.',
+              'It is fairly technical, it would take too long to explain. Let me just get on with it.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'I am verifying the interface metrics in the split-tunnelling profile.',
+                refined: 'I am looking at what traffic goes through the VPN tunnel — your internal company network is not going through it right now.',
+                reasonAr: 'المستخدم صرّح بأنه لا يفهم الشبكات. إغراقه بالمصطلحات ليس دليل كفاءة بل فشل في التواصل. اشرح بلغة بسيطة، واربط الشرح بالعَرَض الذي وصفه بنفسه.'
+              },
+              vocabTip: {
+                term: 'routing table / VPN tunnel / internal company network',
+                ipa: '[ˈruːtɪŋ ˈteɪbl̩]',
+                ar: 'جدول التوجيه / نفق الشبكة الافتراضية / الشبكة الداخلية للشركة'
+              },
+              followUp: 'State the finding in one sentence and announce the next step before changing anything.',
+              arabicNotes: 'قاعدة ذهبية في الدعم الفني: اشرح ما ستفعله قبل أن تفعله على جهاز المستخدم، فهذا يبني الثقة ويمنع القلق.'
+            }
+          },
+          {
+            speaker: 'Mr. Miller',
+            avatar: '👨‍💻',
+            aiSpeech: 'That makes sense now. The shared drive is back, thank you. By the way, a colleague on my team had exactly the same problem first thing this morning.',
+            suggestedResponses: [
+              'Thank you for mentioning that, it matters. It suggests this is not an isolated case but a faulty VPN profile from yesterday’s update. I will raise a problem record, notify the network team, and we will push the corrected profile centrally.',
+              'Good to know. Please ask your colleague to contact the Service Desk as well and we will look at hers separately.',
+              'That could be a coincidence. I will close your ticket for now since everything is working on your side.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'That could be a coincidence, I will close your ticket for now.',
+                refined: 'It suggests this is not an isolated case. I will raise a problem record and notify the network team.',
+                reasonAr: 'بلاغان متطابقان في اليوم نفسه مؤشر على مشكلة جذرية وليس حادثتين منفصلتين. إغلاق التذكرة لأن هذا المستخدم تحديداً يعمل الآن يترك بقية الفريق يعاني.'
+              },
+              vocabTip: {
+                term: 'isolated case / problem record / to push a profile centrally',
+                ipa: '[ˈaɪsəleɪtɪd keɪs]',
+                ar: 'حالة فردية / سجل المشكلة الجذرية / نشر الملف مركزياً'
+              },
+              followUp: 'Document the link between both reports and offer to contact the colleague proactively.',
+              arabicNotes: 'في إطار ITIL يُفرَّق بين Incident (حادثة فردية) وProblem (سبب جذري يولّد حوادث متعددة)؛ استخدام المصطلح الصحيح أمام مستخدم تقني يدل على احترافية.'
+            }
+          }
+        ]
+      },
+      {
+        id: 'it_epic_chart_en',
+        title: 'EPIC: Patient Chart Locked After Role Change (ICU)',
+        level: 'B2',
+        persona: {
+          name: 'Ms. Anna Brandt (ICU Nurse)',
+          role: 'Nurse mid shift-handover',
+          avatar: '👩‍⚕️',
+          tone: 'Tense, under time pressure'
+        },
+        context: 'An intensive care nurse can no longer open the chart of a ventilated patient in EPIC (Hyperspace). She receives "No access to this treatment unit". The shift handover is already under way and vital signs must be documented.',
+        steps: [
+          {
+            speaker: 'Ms. Brandt',
+            avatar: '👩‍⚕️',
+            aiSpeech: 'Hello, ICU 2 here. I cannot get into my ventilated patient\'s chart in EPIC any more. All I get is "No access to this treatment unit". I need to document the handover right now!',
+            suggestedResponses: [
+              'Good morning, Ms. Brandt. I will take care of this straight away. Could you give me your EPIC login ID and the patient\'s encounter number so I can check your security profile?',
+              'Hello, you will need to raise a ticket and someone will look at it within the next few hours.',
+              'Good morning. Have you tried logging out and back in again? That usually fixes it.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'You will need to raise a ticket and someone will look at it.',
+                refined: 'I will take care of this straight away. Could you give me your EPIC login ID and the encounter number so I can check your security profile?',
+                reasonAr: 'في بيئة المستشفى، إحالة الممرضة إلى فتح تذكرة أثناء تسليم وردية العناية المركزة تأخير غير مقبول. أكّد التحرك الفوري ثم اطلب البيانات المحددة التي تمكّنك من الفحص.'
+              },
+              vocabTip: {
+                term: 'security profile / treatment unit / encounter number',
+                ipa: '[sɪˈkjʊərɪti ˈprəʊfaɪl]',
+                ar: 'ملف الصلاحيات / وحدة العلاج (القسم) / رقم الحالة'
+              },
+              followUp: 'Check in EPIC administration whether the correct treatment unit context (ICU 2) is assigned to the user.',
+              arabicNotes: 'نظام EPIC يربط الصلاحية بوحدة علاجية محددة، لذلك قد يكون الحساب سليماً لكن بدون ربط بالقسم الصحيح بعد نقل الوردية.'
+            }
+          },
+          {
+            speaker: 'Ms. Brandt',
+            avatar: '👩‍⚕️',
+            aiSpeech: 'My ID is a.brandt and the encounter number is 4471902. It worked fine yesterday. I was transferred from Ward 4 to ICU 2 this week.',
+            suggestedResponses: [
+              'Thank you, that explains it. Your profile is still mapped to Ward 4. I am adding ICU 2 as a treatment unit now. Please log out of Hyperspace completely and log back in.',
+              'Right, HR must have forgotten to update that. Unfortunately there is nothing I can do, they have to change it.',
+              'I will just give you full access to every ward, then the problem goes away for good.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'I will just give you full access to every ward.',
+                refined: 'I am adding ICU 2 as an additional treatment unit on your profile.',
+                reasonAr: 'منح صلاحية كاملة لحل سريع خرق لمبدأ الحد الأدنى من الصلاحيات ولحماية بيانات المرضى. امنح فقط الوحدة المطلوبة واشرح الخطوة التالية.'
+              },
+              vocabTip: {
+                term: 'internal transfer / to update the profile / to log back in',
+                ipa: '[ˈʌpdeɪt ðə ˈprəʊfaɪl]',
+                ar: 'النقل بين الأقسام / تحديث الملف الشخصي / إعادة تسجيل الدخول'
+              },
+              followUp: 'Ask the user to confirm access, then document the profile change in the ticket.',
+              arabicNotes: 'شرح السبب بإيجاز (that explains it) يبني ثقة المستخدم ويقلل تكرار البلاغ.'
+            }
+          },
+          {
+            speaker: 'Ms. Brandt',
+            avatar: '👩‍⚕️',
+            aiSpeech: 'One moment... yes, the chart is there now. But what do I do if EPIC goes down completely during the night shift? I would be left with no documentation again.',
+            suggestedResponses: [
+              'That is covered by our downtime procedure: the BCA workstation gives you read-only access to the most recent patient data, and documentation switches to the ward\'s paper forms in the meantime.',
+              'That basically never happens, so I would not worry about it.',
+              'Just call us again and we will see what we can do at that point.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'That basically never happens, so I would not worry about it.',
+                refined: 'That is covered by our downtime procedure: read-only access via the BCA workstation, with paper forms as the fallback.',
+                reasonAr: 'لا تُهوّن من قلق مشروع يتعلق بسلامة التوثيق. اذكر خطة الطوارئ المعتمدة وسمِّ البديل العملي بوضوح.'
+              },
+              vocabTip: {
+                term: 'downtime procedure / fallback level / business continuity access (BCA)',
+                ipa: '[ˈdaʊntaɪm prəˈsiːdʒə]',
+                ar: 'إجراء التعطل / المستوى الاحتياطي / وصول استمرارية العمل'
+              },
+              followUp: 'Point the user to the downtime quick guide on the intranet and offer a briefing for the team.',
+              arabicNotes: 'خطة التعطل إلزامية قانونياً في المستشفيات، ومعرفة الدعم الفني بها جزء أساسي من الكفاءة المهنية.'
+            }
+          }
+        ]
+      },
+      {
+        id: 'it_citrix_session_en',
+        title: 'Citrix: Published Application Will Not Launch (Ghost Session)',
+        level: 'B2',
+        persona: {
+          name: 'Dr. Jonas Riedel (Consultant Radiologist)',
+          role: 'Home-office reporting user',
+          avatar: '👨‍⚕️',
+          tone: 'Matter-of-fact but impatient'
+        },
+        context: 'A consultant radiologist wants to reach the reporting system from home through Citrix Workspace. The published application hangs on launch; a disconnected session from the previous day is still active in the background (a ghost session).',
+        steps: [
+          {
+            speaker: 'Dr. Riedel',
+            avatar: '👨‍⚕️',
+            aiSpeech: 'Riedel here, Radiology. I am working from home and I cannot get into the reporting system through Citrix. The window flashes up and then disappears. I still have twelve reports to sign off this afternoon.',
+            suggestedResponses: [
+              'Good afternoon, Dr. Riedel. That sounds like a session that was not disconnected cleanly. May I check your active Citrix sessions? I only need your login ID.',
+              'Good afternoon. Have you tried restarting your machine completely? That usually clears it.',
+              'Your home internet is probably too slow. Please check your Wi-Fi connection first.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Your home internet is probably too slow.',
+                refined: 'That sounds like a session that was not disconnected cleanly. May I check your active Citrix sessions?',
+                reasonAr: 'تجنّب إلقاء اللوم على بيئة المستخدم قبل الفحص، فهو يبدو تهرباً من المسؤولية. اطرح فرضية تقنية محددة واطلب الإذن بالفحص بصيغة مهذبة.'
+              },
+              vocabTip: {
+                term: 'published application / disconnected session / login ID',
+                ipa: '[ˈpʌblɪʃt ˌæplɪˈkeɪʃn̩]',
+                ar: 'التطبيق المنشور / الجلسة المفصولة / معرّف الدخول'
+              },
+              followUp: 'Open the Citrix management console and filter sessions by username.',
+              arabicNotes: 'طلب الإذن (May I...?) قبل الدخول إلى حساب المستخدم معيار أساسي في الدعم الفني ويحمي الخصوصية.'
+            }
+          },
+          {
+            speaker: 'Dr. Riedel',
+            avatar: '👨‍⚕️',
+            aiSpeech: 'My ID is j.riedel. I was briefly logged in last night but I just closed the laptop lid because I was called in for a shift.',
+            suggestedResponses: [
+              'Thank you. I can see a session still disconnected on a terminal server since yesterday. I will log it off in a controlled way so a clean new session can be established.',
+              'You really should not do that, you have to log off properly every time. I will kill it now.',
+              'I will just reboot the server, that clears every session and it will work again.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'I will just reboot the server, that clears every session.',
+                refined: 'I will log your disconnected session off in a controlled way so a clean new session can be established.',
+                reasonAr: 'إعادة تشغيل الخادم تضرّ بكل المستخدمين الآخرين عليه. الحل الصحيح إنهاء جلسة المستخدم المعنيّ فقط بشكل مضبوط.'
+              },
+              vocabTip: {
+                term: 'terminal server / to log off a session / to force a logoff',
+                ipa: '[ˈtɜːmɪnl̩ ˈsɜːvə]',
+                ar: 'الخادم الطرفي / إنهاء الجلسة / فرض تسجيل الخروج'
+              },
+              followUp: 'Mention politely that a deliberate log-off avoids leftover sessions in future.',
+              arabicNotes: 'لاحظ الفرق: "You really should not do that" نبرة توبيخية غير مناسبة لطبيب استشاري؛ الأفضل نصيحة لطيفة بعد حل المشكلة.'
+            }
+          },
+          {
+            speaker: 'Dr. Riedel',
+            avatar: '👨‍⚕️',
+            aiSpeech: 'The application is starting now. Scrolling through the CT series is very sluggish, though. Is that Citrix as well?',
+            suggestedResponses: [
+              'A standard Citrix session is not optimised for large image series. I will set you up with the dedicated reporting client, which has higher graphics throughput, and come back to you once it is ready.',
+              'Yes, Citrix is always a bit slow, I am afraid you will have to live with that.',
+              'That could be anything. Please raise a separate ticket for it and we will take it from there.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Citrix is always a bit slow, you will have to live with that.',
+                refined: 'I will set you up with the dedicated reporting client, which has higher graphics throughput.',
+                reasonAr: 'لا تُنهِ المكالمة بقبول العجز. قدّم حلاً بديلاً ملموساً والتزم بالمتابعة، فهذا جوهر الخدمة الاحترافية.'
+              },
+              vocabTip: {
+                term: 'image series / graphics throughput / dedicated client',
+                ipa: '[ˈɡræfɪks ˈθruːpʊt]',
+                ar: 'سلسلة الصور الطبية / أداء الرسوميات / العميل المخصص'
+              },
+              followUp: 'Record the performance requirement and align the rollout with client management.',
+              arabicNotes: 'الالتزام الصريح بالمتابعة (I will come back to you) عنصر أساسي في اتفاقيات مستوى الخدمة.'
+            }
+          }
+        ]
+      },
+      {
+        id: 'it_patient_risk_en',
+        title: 'Patient Safety Incident: Medication Module Down in Theatre (P1)',
+        level: 'C1',
+        persona: {
+          name: 'Dr. Mark Lehmann (Lead Anaesthetist)',
+          role: 'Reporting an acute failure in the operating theatre',
+          avatar: '🧑‍⚕️',
+          tone: 'Very firm, acute urgency'
+        },
+        context: 'In the operating theatre complex the medication prescribing module can no longer be opened. Two procedures are already under way and a third is scheduled. Without the module, dosages and allergies are not visible — patients are at immediate risk. The call must be escalated as a P1 incident straight away.',
+        steps: [
+          {
+            speaker: 'Dr. Lehmann',
+            avatar: '🧑‍⚕️',
+            aiSpeech: 'Lehmann, Anaesthetics, West Theatres. We have a serious problem: the medication module will not load. I am mid-anaesthesia and I can see neither dosages nor allergies. This is putting patients at risk!',
+            suggestedResponses: [
+              'Dr. Lehmann, I am classifying this as a P1 incident with patient safety impact and alerting the on-call team immediately. Please stay on the line while I trigger the escalation.',
+              'Understood, that sounds urgent. I will raise a high-priority ticket and someone will get back to you as soon as possible.',
+              'Good afternoon. Could you first check whether it is only your workstation or the other terminals as well?'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'I will raise a high-priority ticket and someone will get back to you.',
+                refined: 'I am classifying this as a P1 incident with patient safety impact and alerting the on-call team immediately.',
+                reasonAr: 'عبارة "patient safety impact" مصطلح تصنيفي مُلزِم: بمجرد ذكرها يجب تجاوز المسار العادي للتذاكر والانتقال فوراً إلى التصعيد. صياغة "someone will get back to you" غامضة وغير مقبولة هنا.'
+              },
+              vocabTip: {
+                term: 'patient safety impact / P1 incident / to alert the on-call team',
+                ipa: '[ˈpeɪʃnt ˈseɪfti ˈɪmpækt]',
+                ar: 'تعريض المريض للخطر / عطل من الأولوية القصوى / إنذار فريق الاستدعاء'
+              },
+              followUp: 'Trigger the technical escalation in parallel with the report and keep the line open.',
+              arabicNotes: 'تصنيف P1 يفرض زمن استجابة مُحدّداً في اتفاقية مستوى الخدمة، ويُلزم الدعم بإبلاغ فريق الاستدعاء دون انتظار موافقة إضافية.'
+            }
+          },
+          {
+            speaker: 'Dr. Lehmann',
+            avatar: '🧑‍⚕️',
+            aiSpeech: 'Good. What do I do in the meantime? I cannot interrupt the anaesthesia and I need this patient\'s allergy data now.',
+            suggestedResponses: [
+              'Please switch to the emergency workstation in the theatre control room: it provides read-only emergency access to medication and allergy data. I will stay on the line until you have the data in front of you.',
+              'Please ask on the ward whether someone there can read the data out to you.',
+              'Please hold for a moment, the specialist team will almost certainly contact you shortly.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Please hold, the specialist team will contact you shortly.',
+                refined: 'Please switch to the emergency workstation: it provides read-only emergency access to the allergy data.',
+                reasonAr: 'أثناء خطر فعلي على المريض، الانتظار ليس حلاً. قدّم مساراً بديلاً فورياً وقابلاً للتنفيذ، وابقَ على الخط حتى يتأكد الطبيب من حصوله على البيانات.'
+              },
+              vocabTip: {
+                term: 'emergency access / theatre control room / medication data',
+                ipa: '[ɪˈmɜːdʒənsi ˈækses]',
+                ar: 'وصول الطوارئ / غرفة التحكم بالعمليات / بيانات الأدوية'
+              },
+              followUp: 'Walk the user through it step by step until emergency access is demonstrably working.',
+              arabicNotes: 'البقاء على الخط ليس مجاملة بل إجراء سلامة: يضمن عدم انقطاع المسار البديل قبل التأكد من نجاحه.'
+            }
+          },
+          {
+            speaker: 'Dr. Lehmann',
+            avatar: '🧑‍⚕️',
+            aiSpeech: 'Emergency access is working, I have the allergies. I trust this will be properly reviewed afterwards — something like this must not happen in theatre.',
+            suggestedResponses: [
+              'Absolutely. The incident will be fully documented as a P1 with patient safety impact and will go through post-incident review with a root cause analysis. You will receive written feedback on the outcome.',
+              'Yes, I will note it in the ticket and then it is closed.',
+              'You would need to take that up with hospital management, it is outside our remit.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'I will note it in the ticket and then it is closed.',
+                refined: 'The incident will be fully documented and go through post-incident review with a root cause analysis; you will receive written feedback.',
+                reasonAr: 'حادثة تعريض مريض للخطر لا تُغلق بتدوين ملاحظة. الصياغة المهنية تذكر ثلاثة عناصر: التوثيق الكامل، وتحليل السبب الجذري، والتغذية الراجعة المكتوبة للمُبلِّغ.'
+              },
+              vocabTip: {
+                term: 'post-incident review / root cause analysis / duty to document',
+                ipa: '[ruːt kɔːz əˈnæləsɪs]',
+                ar: 'المراجعة اللاحقة للحادثة / تحليل السبب الجذري / واجب التوثيق'
+              },
+              followUp: 'Write the incident report and notify clinical risk management (CIRS).',
+              arabicNotes: 'نظام CIRS لإدارة المخاطر السريرية معتمد في المستشفيات؛ ذكرُه صراحةً يُظهر إلماماً بالإطار التنظيمي ويطمئن الطبيب المُبلِّغ.'
+            }
           }
         ]
       }
@@ -419,6 +1370,362 @@ export const VOCATIONAL_SCENARIOS = {
               },
               followUp: 'Record Dr. Evans\' name and exact timestamp in the LIS critical incident log.',
               arabicNotes: 'توثيق اسم الطبيب والوقت في سجل الحوادث الحرجة بنظام معلومات المختبر (LIS) يحمي المختبر من المسؤولية القانونية.'
+            }
+          }
+        ]
+      },
+      {
+        id: 'lab_qc_outlier_en',
+        title: 'Quality Control & Westgard Rule Violation (Outlier)',
+        level: 'B2',
+        persona: {
+          name: 'Dr. Weber',
+          role: 'Senior Biomedical Scientist / Laboratory Manager',
+          avatar: '👩‍🔬',
+          tone: 'Analytical, quality-focused'
+        },
+        context: 'During the morning internal quality control run on the main clinical chemistry analyser, the glucose control sample deviates by more than 3 standard deviations, violating Westgard rule 1-3s.',
+        steps: [
+          {
+            speaker: 'Dr. Weber',
+            avatar: '👩‍🔬',
+            aiSpeech: 'Good morning. I can see from the control room that the glucose assay is blocked. What happened during the internal quality control?',
+            suggestedResponses: [
+              'Good morning, Dr. Weber. The glucose control measurement falls outside 3 standard deviations (+3.2s). I have locked the parameter to protect patient samples.',
+              'Morning. The analyser is playing up again today, the value is too high. Shall I just run it once more?',
+              'Good morning. We have not measured any patient samples yet, I was just about to run a fresh calibration.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'The analyser is playing up, shall I just run it once more?',
+                refined: 'The control measurement falls outside 3 standard deviations. I have locked the parameter in line with the SOP.',
+                reasonAr: 'تجنب التعبيرات العامية (the analyser is playing up). التقرير المهني لمديرة المختبر يتطلب ذكر المصطلحات الإحصائية الدقيقة (standard deviation) والإجراء الاحترازي المتبع.'
+              },
+              vocabTip: {
+                term: 'standard deviation (SD) / Westgard rules / to lock the parameter',
+                ipa: '[ˈstændəd ˌdiːviˈeɪʃn̩]',
+                ar: 'الانحراف المعياري / قواعد ويستغارد لضبط الجودة / إيقاف المعامل'
+              },
+              followUp: 'Propose the root cause analysis: reagent lot, expiry date, or calibration drift.',
+              arabicNotes: 'وفق معايير ISO 15189، فإن خرق قاعدة 1:3s يعني خطأً عشوائياً أو نظامياً جسيماً يفرض إيقاف إطلاق نتائج المرضى فوراً.'
+            }
+          },
+          {
+            speaker: 'Dr. Weber',
+            avatar: '👩‍🔬',
+            aiSpeech: 'Good that you locked it. Which causes have you already narrowed down before we talk about releasing anything?',
+            suggestedResponses: [
+              'I checked the lot, expiry date and storage of the control material and repeated the run with a freshly reconstituted control — the deviation persists. The reagent lot was changed yesterday, so I suspect the cause there rather than in the control material.',
+              'I just measured it again and the second value was better. It was probably an outlier.',
+              'I was going to recalibrate first, that would most likely have sorted it out by itself.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'The second value was better, it was probably an outlier.',
+                refined: 'Control material checked and repeated with a fresh control — the deviation persists. The reagent lot was changed yesterday.',
+                reasonAr: 'إعادة القياس حتى تظهر نتيجة مقبولة ("testing into compliance") مخالفة جسيمة لضبط الجودة. المطلوب تضييق السبب بشكل منهجي: مادة الضبط، ثم الكاشف، ثم المعايرة — وذكر التغيير الذي سبق الانحراف.'
+              },
+              vocabTip: {
+                term: 'control material / to narrow down the deviation / reagent lot',
+                ipa: '[kənˈtrəʊl məˈtɪəriəl]',
+                ar: 'مادة الضبط / تضييق نطاق الانحراف / دفعة الكاشف'
+              },
+              followUp: 'Document every cause you checked together with its result, including the ones you ruled out.',
+              arabicNotes: 'توثيق الأسباب المستبعدة لا يقل أهمية عن السبب المؤكد، لأنه يثبت للمدقق أن التحليل كان منهجياً وليس تخميناً.'
+            }
+          },
+          {
+            speaker: 'Dr. Weber',
+            avatar: '👩‍🔬',
+            aiSpeech: 'Agreed, that is a sound conclusion. We will revert to the previous lot. And what about the patient samples that have run since the last valid control?',
+            suggestedResponses: [
+              'Those have to be assessed retrospectively. I will identify every glucose result since the last valid quality control, hold them back, and re-measure them once the control passes. For any reports already transmitted, we will actively issue corrected reports to the ward.',
+              'Fortunately those have already gone out, so there is nothing we can do about them now.',
+              'I would say we let those through — the deviation was only in the control, not in the patient samples.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'We let those through, the deviation was only in the control.',
+                refined: 'Every result since the last valid control is held back, re-measured, and any report already transmitted is actively corrected.',
+                reasonAr: 'هذه هي النتيجة الجوهرية لخرق قاعدة ويستغارد: كل نتائج المرضى منذ آخر ضبط جودة صالح تقع في نطاق مشكوك فيه. عبارة "الانحراف كان في الضبط فقط" خطأ مفاهيمي خطير.'
+              },
+              vocabTip: {
+                term: 'to assess retrospectively / to hold back reports / corrected report',
+                ipa: '[əˈses ˌretrəʊˈspektɪvli]',
+                ar: 'التقييم بأثر رجعي / حجز النتائج / التقرير المصحَّح'
+              },
+              followUp: 'Define the window since the last valid control and agree the re-notification with the laboratory manager.',
+              arabicNotes: 'إصدار "corrected report" واجب مُلزِم: إبلاغ القسم الطالب فعلياً ضروري، ولا يكفي تعديل النتيجة بصمت في النظام.'
+            }
+          }
+        ]
+      },
+      {
+        id: 'lab_centrifuge_en',
+        title: 'Centrifuge: Imbalance and Wrong Protocol (Pre-analytics)',
+        level: 'B2',
+        persona: {
+          name: 'Melanie Hoffmann (Trainee Biomedical Scientist, year 2)',
+          role: 'Trainee in specimen reception',
+          avatar: '👩‍🔬',
+          tone: 'Unsure, visibly startled'
+        },
+        context: 'A trainee has loaded the bench centrifuge on one side only. The unit vibrated heavily during the run and shut down with an error. On top of that, citrate tubes for coagulation testing were spun using the standard serum programme. You have to coach the trainee accurately without humiliating her.',
+        steps: [
+          {
+            speaker: 'Melanie',
+            avatar: '👩‍🔬',
+            aiSpeech: 'Sorry to bother you — the centrifuge rattled really loudly and then just switched itself off. I was about to open the lid and have a look. Have I broken something?',
+            suggestedResponses: [
+              'Please do not open the lid yet — only once the rotor has come to a complete stop. That rattling points to an imbalance. Let us look together at how the tubes were loaded.',
+              'It is not a big deal, go ahead and open it and just put the tubes back in.',
+              'You really should have been paying attention. Mistakes like that cannot happen in a laboratory.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'It is not a big deal, go ahead and open it.',
+                refined: 'Please do not open the lid until the rotor has come to a complete stop. That rattling points to an imbalance.',
+                reasonAr: 'السلامة أولاً: فتح غطاء الطاردة قبل توقف الدوار تماماً خطر إصابة حقيقي. ابدأ بالتعليمة الوقائية الفورية بصيغة مهذبة ثم اشرح السبب التقني.'
+              },
+              vocabTip: {
+                term: 'imbalance / rotor / to load symmetrically',
+                ipa: '[ɪmˈbæləns]',
+                ar: 'اختلال التوازن / الدوار / التحميل المتماثل'
+              },
+              followUp: 'Explain the principle: tubes of equal weight always go in opposite positions, using a balance tube if needed.',
+              arabicNotes: 'توجيه المتدرب يبدأ بالفعل الوقائي ثم التعليل، مع استخدام صيغة الجمع (Let us look together) لتقليل الإحراج والحفاظ على الثقة.'
+            }
+          },
+          {
+            speaker: 'Melanie',
+            avatar: '👩‍🔬',
+            aiSpeech: 'The rotor has stopped now. I had put four tubes on one side only. And I ran the blue citrate tubes on the normal serum programme — is that a problem?',
+            suggestedResponses: [
+              'Yes, unfortunately that matters. Coagulation samples need their own protocol, typically 1500 g for 10 minutes. The serum programme does not reliably produce platelet-poor plasma, so we have to request a fresh draw.',
+              'No, that does not matter, the main thing is that the tubes went through the centrifuge at all.',
+              'Just run the samples again on the correct programme and it will be fine.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Just run the samples again on the correct programme.',
+                refined: 'The serum programme does not reliably produce platelet-poor plasma, so we have to request a fresh draw.',
+                reasonAr: 'إعادة الطرد المركزي لا تُصلح عينة تخثر عولجت ببروتوكول خاطئ، لأن تفعيل الصفائح يكون قد حدث بالفعل. المطلوب سحب عينة جديدة (fresh draw).'
+              },
+              vocabTip: {
+                term: 'platelet-poor plasma / fresh draw / relative centrifugal force (RCF)',
+                ipa: '[ˈpleɪtlət pʊə ˈplæzmə]',
+                ar: 'البلازما فقيرة الصفائح / إعادة سحب العينة / قوة الطرد المركزي النسبية'
+              },
+              followUp: 'Inform the requesting ward about the necessary fresh draw and justify it on pre-analytical grounds.',
+              arabicNotes: 'تُذكر سرعة الطرد بوحدة g (RCF) وليس بعدد اللفات فقط، لأن قطر الدوار يختلف بين الأجهزة.'
+            }
+          },
+          {
+            speaker: 'Melanie',
+            avatar: '👩‍🔬',
+            aiSpeech: 'This is really embarrassing. Do I have to report it anywhere, or can it stay between us?',
+            suggestedResponses: [
+              'It does need documenting, and that is completely normal: we log the incident in the equipment record, have the rotor checked before the next run, and note the fresh draw in the pre-analytics documentation. Reporting errors is part of quality assurance, not an accusation.',
+              'No, it can stay between us, otherwise there will just be unnecessary trouble with the lab manager.',
+              'You will have to report that yourself, it is not my responsibility.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'It can stay between us, otherwise there will just be trouble.',
+                refined: 'We log the incident in the equipment record and note the fresh draw in the pre-analytics documentation.',
+                reasonAr: 'إخفاء الحادثة مخالفة لنظام الجودة. الصياغة المهنية تطمئن المتدرب بأن التوثيق إجراء روتيني وليس عقوبة.'
+              },
+              vocabTip: {
+                term: 'equipment record / quality assurance / pre-analytics',
+                ipa: '[ɪˈkwɪpmənt ˈrekɔːd]',
+                ar: 'سجل الجهاز / ضمان الجودة / مرحلة ما قبل التحليل'
+              },
+              followUp: 'Enter the incident in the equipment record and flag the rotor check to equipment management.',
+              arabicNotes: 'ثقافة الإبلاغ عن الأخطاء ركن أساسي في معايير ISO 15189؛ التعبير عنها بوضوح يطمئن الزميل الأقل خبرة.'
+            }
+          }
+        ]
+      },
+      {
+        id: 'lab_hygiene_en',
+        title: 'Hygiene: PPE Breach and Sample Spill (Containment Level 2)',
+        level: 'B2',
+        persona: {
+          name: 'Tobias Frank (Administration intern)',
+          role: 'Non-technical visitor in the laboratory area',
+          avatar: '🧑‍💼',
+          tone: 'Friendly but unaware'
+        },
+        context: 'An intern from administration walks into the containment level 2 laboratory area without a lab coat or gloves to collect a signature, and knocks over a tube of potentially infectious material. You have to move him out of the area politely but firmly, then carry out surface disinfection correctly.',
+        steps: [
+          {
+            speaker: 'Tobias',
+            avatar: '🧑‍💼',
+            aiSpeech: 'Hi! Sorry to interrupt — I just need a quick signature from you for the supplies order. Can we do that now?',
+            suggestedResponses: [
+              'Good morning, Tobias. I am happy to sign that, but could you please step back into the corridor: this area is containment level 2 and may only be entered with personal protective equipment. I will come straight out to you.',
+              'Sure, just come on in, it will only take a second.',
+              'You are not allowed in here! Did you not read the sign on the door?'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'You are not allowed in here! Did you not read the sign?',
+                refined: 'Could you please step back into the corridor: this area is containment level 2 and requires personal protective equipment. I will come straight out.',
+                reasonAr: 'الحزم لا يعني الفظاظة. اجمع بين ثلاثة عناصر: طلب مهذب بالخروج، سبب موضوعي، وحلّ بديل فوري حتى لا يشعر الزائر بالرفض.'
+              },
+              vocabTip: {
+                term: 'personal protective equipment (PPE) / containment level 2 / access',
+                ipa: '[kənˈteɪnmənt ˈlevl̩]',
+                ar: 'معدات الوقاية الشخصية / مستوى الأمان الحيوي 2 / الدخول'
+              },
+              followUp: 'Offer to sign outside the laboratory area and point out the access rules in a friendly way.',
+              arabicNotes: 'صيغة "Could you please step back" أمر مهذب بصيغة السؤال، وهي المعيار في فرض قاعدة سلامة دون إهانة المخاطب.'
+            }
+          },
+          {
+            speaker: 'Tobias',
+            avatar: '🧑‍💼',
+            aiSpeech: 'Oh no, I am so sorry! I just knocked against the rack and a tube has fallen over and leaked. Should I quickly wipe it up with a paper towel?',
+            suggestedResponses: [
+              'Please do not touch anything and leave the area. I will deal with it wearing protective equipment: the spill is first covered with absorbent material, then soaked with surface disinfectant, and we wait for the full contact time.',
+              'Yes, go ahead with a paper towel, but wash your hands thoroughly afterwards.',
+              'Just leave it, it will dry by itself and we can deal with it later.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Go ahead with a paper towel and wash your hands afterwards.',
+                refined: 'Please do not touch anything. I will deal with it in PPE: cover, soak with surface disinfectant, wait for the contact time.',
+                reasonAr: 'مسح المادة المعدية بمنديل ينشرها ويعرّض الشخص للخطر. البروتوكول الصحيح ثلاث خطوات مرتبة: التغطية، ثم التشريب بالمطهر، ثم انتظار زمن التأثير.'
+              },
+              vocabTip: {
+                term: 'surface disinfectant / contact time / absorbent material',
+                ipa: '[ˈkɒntækt taɪm]',
+                ar: 'مطهر الأسطح / زمن التأثير / مادة ماصة'
+              },
+              followUp: 'Dispose of the contaminated material as infectious waste and document the incident.',
+              arabicNotes: 'مصطلح contact time جوهري: المطهر لا يعمل فوراً بل يحتاج زمناً محدداً من الشركة المصنّعة، وتجاهله خطأ شائع.'
+            }
+          },
+          {
+            speaker: 'Tobias',
+            avatar: '🧑‍💼',
+            aiSpeech: 'I did touch the rack a moment ago. Is it enough if I go and wash my hands?',
+            suggestedResponses: [
+              'In this case hand disinfection is required, not just washing: take the product from the dispenser by the exit, rub it in completely and observe the thirty-second contact time.',
+              'Yes, washing with soap is perfectly sufficient in a case like this.',
+              'Do not worry about it, I am sure it was nothing infectious.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Washing with soap is perfectly sufficient.',
+                refined: 'Hand disinfection is required here: rub it in completely and observe the thirty-second contact time.',
+                reasonAr: 'فرق جوهري: الغسل يزيل الأوساخ، أما التطهير فيقتل الممرضات. بعد تماس محتمل مع مادة معدية، التطهير هو الإجراء الصحيح.'
+              },
+              vocabTip: {
+                term: 'hand disinfection / dispenser / to rub in',
+                ipa: '[hænd ˌdɪsɪnˈfekʃn̩]',
+                ar: 'التطهير الصحي لليدين / الموزع / الفرك حتى الامتصاص'
+              },
+              followUp: 'Refer to the five moments of hand hygiene and the hygiene plan at the entrance.',
+              arabicNotes: 'معيار منظمة الصحة العالمية "الخمس لحظات لنظافة اليدين" معتمد في خطط النظافة المخبرية.'
+            }
+          }
+        ]
+      },
+      {
+        id: 'lab_calibration_en',
+        title: 'Calibration: Failed Curve After a Reagent Lot Change',
+        level: 'C1',
+        persona: {
+          name: 'Stefan Bauer (Application Specialist, instrument manufacturer)',
+          role: 'External service engineer on the phone',
+          avatar: '👨‍🔧',
+          tone: 'Structured, asks targeted follow-up questions'
+        },
+        context: 'After switching to a new reagent lot, calibration of the ALT parameter on the clinical chemistry analyser fails repeatedly (error code CAL-317). The parameter is locked and patient samples are backing up. You call the manufacturer hotline and must describe the situation precisely and in a structured way.',
+        steps: [
+          {
+            speaker: 'Mr. Bauer',
+            avatar: '👨‍🔧',
+            aiSpeech: 'Bauer, technical support. You have reported a calibration problem — please give me a brief description of what exactly is happening.',
+            suggestedResponses: [
+              'Good morning, Mr. Bauer. Since this morning, calibration of the ALT parameter has been failing with error code CAL-317. It started after we switched to the new reagent lot, and the parameter is currently locked.',
+              'Good morning. Our analyser is playing up with the calibration, it just will not go through. Could you take a look?',
+              'Hello, we have an error here and we urgently need someone on site, otherwise we are stuck.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Our analyser is playing up with the calibration, it just will not go through.',
+                refined: 'Calibration of the ALT parameter fails with error code CAL-317, starting after the switch to the new reagent lot.',
+                reasonAr: 'عند الاتصال بالدعم الفني، اذكر أربعة عناصر في جملة واحدة: المَعلَم المتأثر، رمز الخطأ، الحدث المُطلِق، والحالة الراهنة. الوصف الغامض يطيل المكالمة ويؤخر الحل.'
+              },
+              vocabTip: {
+                term: 'calibration fails / reagent lot / the parameter is locked',
+                ipa: '[ˌkælɪˈbreɪʃn̩ feɪlz]',
+                ar: 'فشل المعايرة / دفعة الكاشف / المَعلَم موقوف'
+              },
+              followUp: 'Have the instrument model, serial number and reagent lot number ready for follow-up questions.',
+              arabicNotes: 'في المكالمات التقنية يُتوقع منك تقديم المعلومات بترتيب منطقي دون أن تُسأل، فهذا مؤشر على الكفاءة المهنية.'
+            }
+          },
+          {
+            speaker: 'Mr. Bauer',
+            avatar: '👨‍🔧',
+            aiSpeech: 'Understood. What have you already checked? And how is the calibration curve behaving — do you see drift, or is the blank value out of range?',
+            suggestedResponses: [
+              'We checked the expiry date and storage of the calibrators, re-entered the lot data and repeated the calibration twice. The blank value is clearly above the tolerance limit, and the curve also shows drift in the upper measuring range.',
+              'We tried it a few times but it did not work. I have not looked into it in more detail.',
+              'I think the calibrators are still fine, but I am not completely sure.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'We tried it a few times but it did not work.',
+                refined: 'Expiry and storage checked, lot data re-entered, repeated twice; the blank value is above the tolerance limit.',
+                reasonAr: 'عدّد ما فحصته بالفعل بصيغة قائمة موجزة. هذا يمنع الفني من تكرار أسئلة بديهية ويُظهر أنك أجريت التشخيص الأولي بشكل منهجي.'
+              },
+              vocabTip: {
+                term: 'calibration curve / blank value / tolerance limit / drift',
+                ipa: '[ˌkælɪˈbreɪʃn̩ kɜːv]',
+                ar: 'منحنى المعايرة / قيمة الفراغ / حد التسامح / الانحراف التدريجي'
+              },
+              followUp: 'Offer to send the calibration log and the curve as a printout or export.',
+              arabicNotes: 'المصطلح drift يصف انزياحاً تدريجياً في القياس مع الزمن، ويُميَّز عن الخطأ العشوائي المفاجئ؛ التفريق بينهما مهم في التشخيص.'
+            }
+          },
+          {
+            speaker: 'Mr. Bauer',
+            avatar: '👨‍🔧',
+            aiSpeech: 'That sounds like a problem with the reagent lot itself. I would connect remotely and arrange a replacement lot in parallel. Does that work for you?',
+            suggestedResponses: [
+              'That would be very helpful. I will need a ticket number and a firm time window, please. For context: the parameter has been locked since this morning and from midday we will have to send samples out to a referral laboratory.',
+              'Yes, just go ahead, we will wait until then.',
+              'Can you not do it right now? We really do not have time for this.'
+            ],
+            bestResponseIdx: 0,
+            feedback: {
+              correction: {
+                original: 'Just go ahead, we will wait until then.',
+                refined: 'I will need a ticket number and a firm time window. The parameter has been locked since this morning and from midday we must refer samples out.',
+                reasonAr: 'اختم المكالمة بثلاثة عناصر: رقم التذكرة للتتبّع، نافذة زمنية مُلزِمة، وبيان الأثر التشغيلي. ذكر التحويل الخارجي يوضّح إلحاح الحالة دون رفع الصوت.'
+              },
+              vocabTip: {
+                term: 'remote access / time window / referral laboratory (send-out)',
+                ipa: '[rɪˈməʊt ˈækses]',
+                ar: 'الوصول عن بُعد / النافذة الزمنية / التحويل إلى مختبر خارجي'
+              },
+              followUp: 'Document the ticket number, the contact person and the time in the equipment record.',
+              arabicNotes: 'طلب رقم التذكرة والنافذة الزمنية صراحةً ممارسة معيارية في التعامل مع موردي الأجهزة، وتحمي المختبر عند التدقيق.'
             }
           }
         ]

@@ -1,8 +1,10 @@
 // Phonetics & Tongue Twister Gym Module
 import { PHONETICS_DRILLS } from '../data/lessonsData.js';
 import { GERMAN_PHONETICS_DRILLS } from '../data/lessonsData_de.js';
-import { speechService } from '../services/speechService.js';
-import { audioRecorder } from '../services/audioRecorder.js';
+import { speechController, SpeakIntent } from '../core/speechController.js';
+import { audioEngine } from '../core/audioEngine.js';
+import { actionBar } from '../ui/actionBar.js';
+import { statusStrip } from '../ui/statusStrip.js';
 import { DiffEngine } from '../services/diffEngine.js';
 import { storageService } from '../services/storageService.js';
 import confetti from 'canvas-confetti';
@@ -25,6 +27,120 @@ export class PhoneticsModule {
 
   loadDrills() {
     this.drills = this.currentLang === 'de' ? GERMAN_PHONETICS_DRILLS : PHONETICS_DRILLS;
+  }
+
+  // == module lifecycle ====================================================
+
+  mount() {
+    this.render();
+    this.bindEvents();
+    this.publishActions();
+  }
+
+  unmount() {
+    // main.js already called speechController.reset(); clear the view-local
+    // mirrors so a re-mount starts from a clean state.
+    this.isRecordingTwister = false;
+    this.isTestingPair = false;
+    this.activeTestingPair = null;
+    actionBar.setActions(null);
+  }
+
+  /**
+   * Bottom-bar controls, per tab.
+   *
+   * Minimal pairs has no bar-level microphone on purpose: a pair test is
+   * always started from a specific word-pair card, so a bare FAB would have
+   * no idea which pair to test. The FAB appears only on the tongue-twister
+   * tab, where there is exactly one thing to say.
+   */
+  publishActions() {
+    const isDe = this.currentLang === 'de';
+
+    if (this.activeTab === 'minimalPairs') {
+      const categories = (this.drills && this.drills.minimalPairs) || [];
+      actionBar.setActions({
+        mic: null,
+        buttons: [
+          {
+            icon: 'next',
+            label: isDe ? 'Kontrast' : 'Contrast',
+            ariaLabel: isDe ? 'Nächster Lautkontrast' : 'Next sound contrast',
+            disabled: categories.length < 2,
+            onClick: () => this.cycleCategory()
+          },
+          {
+            icon: 'play',
+            label: isDe ? 'Zungen' : 'Twisters',
+            ariaLabel: isDe ? 'Zu den Zungenbrechern wechseln' : 'Switch to tongue twisters',
+            onClick: () => this.setTab('twisters')
+          }
+        ]
+      });
+      return;
+    }
+
+    const twisters = (this.drills && this.drills.tongueTwisters) || [];
+    actionBar.setActions({
+      mic: {
+        onStart: () => this.toggleTwisterRecord(),
+        onStop: () => this.toggleTwisterRecord()
+      },
+      buttons: [
+        {
+          icon: 'volume',
+          label: 'Demo',
+          ariaLabel: isDe ? 'Zungenbrecher anhören' : 'Hear the tongue twister',
+          onClick: () => {
+            const twister = twisters[this.activeTwisterIdx];
+            if (!twister) return;
+            speechController.speak({ text: twister.text, rate: 0.9, intent: SpeakIntent.USER });
+          }
+        },
+        {
+          icon: 'next',
+          label: isDe ? 'Nächster' : 'Next',
+          disabled: twisters.length < 2,
+          onClick: () => this.cycleTwister()
+        },
+        {
+          icon: 'prev',
+          label: isDe ? 'Paare' : 'Pairs',
+          ariaLabel: isDe ? 'Zu den Minimalpaaren wechseln' : 'Switch to minimal pairs',
+          onClick: () => this.setTab('minimalPairs')
+        }
+      ]
+    });
+  }
+
+  /** Single path for switching tabs, so the bar always matches the view. */
+  setTab(tab) {
+    if (tab === this.activeTab) return;
+    speechController.reset('phonetics-tab');
+    this.activeTab = tab;
+    this.render();
+    this.bindEvents();
+    this.publishActions();
+  }
+
+  cycleCategory() {
+    const categories = (this.drills && this.drills.minimalPairs) || [];
+    if (categories.length < 2) return;
+    speechController.reset('phonetics-category');
+    this.selectedPairCategoryIdx = (this.selectedPairCategoryIdx + 1) % categories.length;
+    this.render();
+    this.bindEvents();
+    this.publishActions();
+  }
+
+  cycleTwister() {
+    const twisters = (this.drills && this.drills.tongueTwisters) || [];
+    if (twisters.length < 2) return;
+    speechController.reset('phonetics-twister');
+    this.activeTwisterIdx = (this.activeTwisterIdx + 1) % twisters.length;
+    this.render();
+    this.bindEvents();
+    this.publishActions();
   }
 
   setLanguage(lang) {
@@ -191,31 +307,29 @@ export class PhoneticsModule {
 
   bindEvents() {
     this.container.querySelector('#tabPairsBtn').addEventListener('click', () => {
-      this.activeTab = 'minimalPairs';
-      this.render();
-      this.bindEvents();
+      this.setTab('minimalPairs');
     });
 
     this.container.querySelector('#tabTwistersBtn').addEventListener('click', () => {
-      this.activeTab = 'twisters';
-      this.render();
-      this.bindEvents();
+      this.setTab('twisters');
     });
 
     if (this.activeTab === 'minimalPairs') {
       const contrastSelect = this.container.querySelector('#contrastSelect');
       if (contrastSelect) {
         contrastSelect.addEventListener('change', (e) => {
+          speechController.reset('phonetics-category');
           this.selectedPairCategoryIdx = parseInt(e.target.value);
           this.render();
           this.bindEvents();
+          this.publishActions();
         });
       }
 
       this.container.querySelectorAll('.play-word-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const word = e.currentTarget.dataset.word;
-          speechService.speak({ text: word, rate: 0.85 });
+          speechController.speak({ text: word, rate: 0.85, intent: SpeakIntent.USER });
         });
       });
 
@@ -230,9 +344,11 @@ export class PhoneticsModule {
       const twisterSelect = this.container.querySelector('#twisterSelect');
       if (twisterSelect) {
         twisterSelect.addEventListener('change', (e) => {
+          speechController.reset('phonetics-twister');
           this.activeTwisterIdx = parseInt(e.target.value);
           this.render();
           this.bindEvents();
+          this.publishActions();
         });
       }
 
@@ -240,7 +356,7 @@ export class PhoneticsModule {
       if (playBtn) {
         playBtn.addEventListener('click', () => {
           const twister = this.drills.tongueTwisters[this.activeTwisterIdx];
-          speechService.speak({ text: twister.text, rate: 0.9 });
+          speechController.speak({ text: twister.text, rate: 0.9, intent: SpeakIntent.USER });
         });
       }
 
@@ -265,8 +381,8 @@ export class PhoneticsModule {
       : `Say either "${wordA}" or "${wordB}" into the microphone:`;
     result.textContent = isDe ? 'Höre zu... Jetzt sprechen!' : 'Listening... Speak now!';
 
-    speechService.startListening({
-      lang: speechService.getDefaultRecognitionLang(),
+    speechController.listen({
+      lang: speechController.recognitionLang(),
       continuous: false,
       interimResults: false,
       onResult: (spoken) => {
@@ -278,20 +394,31 @@ export class PhoneticsModule {
         if (simA > simB && simA >= 0.7) {
           result.textContent = isDe ? `🎯 Erkannt: "${wordA}"! Sehr präzise Aussprache!` : `🎯 Detected: "${wordA}"! Clear articulation!`;
           result.style.color = '#34d399';
-          audioRecorder.playChime('success');
+          audioEngine.playChime('success');
         } else if (simB > simA && simB >= 0.7) {
           result.textContent = isDe ? `🎯 Erkannt: "${wordB}"! Sehr präzise Aussprache!` : `🎯 Detected: "${wordB}"! Clear articulation!`;
           result.style.color = '#34d399';
-          audioRecorder.playChime('success');
+          audioEngine.playChime('success');
         } else {
           result.textContent = isDe 
             ? `Erkannt: "${cleanSpoken}". Betonen Sie den Unterschied zwischen "${wordA}" und "${wordB}" noch klarer.` 
             : `Detected: "${cleanSpoken}". Try to distinguish the vowel or consonant more crisply.`;
           result.style.color = '#fbbf24';
-          audioRecorder.playChime('tap');
+          audioEngine.playChime('tap');
         }
+      
+        // Release the state machine: without this the FSM parks in
+        // PROCESSING and the status strip never clears.
+        speechController.finishProcessing();
       },
-      onError: () => {
+      onError: (err) => {
+        if (err && err.error === 'no-speech') return;
+        if (err && err.permission) {
+          statusStrip.showPermission(err.permission, {
+            onRetry: () => this.startPairTest(wordA, wordB)
+          });
+          return;
+        }
         result.textContent = isDe ? 'Konnte leider nicht deutlich verstanden werden. Bitte erneut versuchen.' : 'Could not catch that clearly. Please try again.';
       }
     });
@@ -310,7 +437,7 @@ export class PhoneticsModule {
       this.isRecordingTwister = false;
       btn.classList.remove('recording');
       btnText.textContent = isDe ? 'Drill' : 'Drill';
-      speechService.stopListening();
+      speechController.stopListening();
       return;
     }
 
@@ -320,8 +447,8 @@ export class PhoneticsModule {
     feedback.style.display = 'none';
 
     let captured = '';
-    speechService.startListening({
-      lang: speechService.getDefaultRecognitionLang(),
+    speechController.listen({
+      lang: speechController.recognitionLang(),
       continuous: true,
       interimResults: true,
       onInterim: ({ full }) => {
@@ -345,18 +472,28 @@ export class PhoneticsModule {
         spokenText.textContent = `${isDe ? 'Gesprochen' : 'Spoken'}: "${spoken}"`;
 
         if (evalResult.accuracy >= 80) {
-          audioRecorder.playChime('success');
+          audioEngine.playChime('success');
           confetti({ particleCount: 50, spread: 50 });
         } else {
-          audioRecorder.playChime('tap');
+          audioEngine.playChime('tap');
         }
 
         storageService.recordActivity({
           words: twister.text.split(' ').length,
           accuracy: evalResult.accuracy
         });
+      
+        // Release the state machine: without this the FSM parks in
+        // PROCESSING and the status strip never clears.
+        speechController.finishProcessing();
       },
-      onError: () => {
+      onError: (err) => {
+        if (err && err.error === 'no-speech') return;
+        if (err && err.permission) {
+          statusStrip.showPermission(err.permission, {
+            onRetry: () => this.toggleTwisterRecord()
+          });
+        }
         this.isRecordingTwister = false;
         btn.classList.remove('recording');
         btnText.textContent = isDe ? 'Drill' : 'Drill';

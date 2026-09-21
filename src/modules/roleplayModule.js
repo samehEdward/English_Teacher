@@ -1,8 +1,10 @@
 // Situational Dialogue & Conversational Roleplay Module
 import { ROLEPLAY_SCENARIOS } from '../data/lessonsData.js';
 import { GERMAN_ROLEPLAY_SCENARIOS } from '../data/lessonsData_de.js';
-import { speechService } from '../services/speechService.js';
-import { audioRecorder } from '../services/audioRecorder.js';
+import { speechController, SpeakIntent } from '../core/speechController.js';
+import { audioEngine } from '../core/audioEngine.js';
+import { actionBar } from '../ui/actionBar.js';
+import { statusStrip } from '../ui/statusStrip.js';
 import { DiffEngine } from '../services/diffEngine.js';
 import { storageService } from '../services/storageService.js';
 import confetti from 'canvas-confetti';
@@ -21,6 +23,87 @@ export class RoleplayModule {
     this.initScenario();
     this.render();
     this.bindEvents();
+  }
+
+  // == module lifecycle ====================================================
+
+  mount() {
+    this.render();
+    this.bindEvents();
+    this.publishActions();
+    // Silent by contract. The opening line has its own replay button.
+  }
+
+  unmount() {
+    this.isListening = false;
+    actionBar.setActions(null);
+  }
+
+  publishActions() {
+    const isDe = this.currentLang === 'de';
+
+    actionBar.setActions({
+      mic: { onStart: () => this.startDictation(), onStop: () => speechController.stopListening() },
+      buttons: [
+        { icon: 'replay', label: isDe ? 'Hören' : 'Listen', onClick: () => this.speakCurrentStep() },
+        { icon: 'hint',   label: isDe ? 'Tipp'  : 'Hint',   onClick: () => this.revealHint() },
+        { icon: 'send',   label: isDe ? 'Senden': 'Send',   onClick: () => this.sendFromInput() },
+        { icon: 'reset',  label: isDe ? 'Neu'   : 'Reset',  onClick: () => { this.initScenario(); this.mount(); } }
+      ]
+    });
+  }
+
+  speakCurrentStep() {
+    const step = this.getCurrentStep();
+    if (!step || !step.aiSpeech) return;
+    speechController.speak({ text: step.aiSpeech, rate: 0.95, intent: SpeakIntent.USER });
+  }
+
+  revealHint() {
+    const step = this.getCurrentStep();
+    const options = (step && (step.suggestedResponses || step.suggested)) || [];
+    if (!options.length) return;
+
+    const best = options[step.bestResponseIdx || 0] || options[0];
+    const input = this.container.querySelector('#roleplayCustomInput');
+    if (input) {
+      input.value = best;
+      this.activeSelectedPrompt = best;
+      input.focus();
+    }
+  }
+
+  sendFromInput() {
+    const input = this.container.querySelector('#roleplayCustomInput');
+    const text = (input && input.value.trim()) || this.activeSelectedPrompt;
+    if (!text) {
+      statusStrip.info(this.currentLang === 'de'
+        ? 'Bitte zuerst antworten oder sprechen.'
+        : 'Type or speak a reply first.');
+      return;
+    }
+    this.handleUserSpokenReply(text);
+  }
+
+  async startDictation() {
+    const input = this.container.querySelector('#roleplayCustomInput');
+
+    const result = await speechController.listen({
+      onInterim: ({ full }) => { if (input) input.value = full; },
+      onResult: (transcript) => {
+        if (input) input.value = transcript;
+        this.activeSelectedPrompt = transcript;
+        speechController.finishProcessing();
+      },
+      onError: (err) => {
+        if (err && err.error === 'no-speech') return;
+        if (err && err.permission) statusStrip.showPermission(err.permission);
+      }
+    });
+
+    if (!result.ok && result.reason === 'permission') {
+      statusStrip.showPermission(result.permission, { onRetry: () => this.startDictation() });
+    }
   }
 
   loadScenarios() {
@@ -58,10 +141,11 @@ export class RoleplayModule {
         avatar: step.avatar,
         text: step.aiSpeech
       });
-      // Optionally speak initial greeting
-      setTimeout(() => {
-        speechService.speak({ text: step.aiSpeech, rate: 0.95 });
-      }, 400);
+      // NO automatic speech here. initScenario() runs on construction, on
+      // render and on language switch; speaking from it is exactly the rogue
+      // TTS the rebuild removes. The opening line carries a replay button,
+      // and speechController would refuse this call anyway (no gesture
+      // window, no open turn).
     }
   }
 
@@ -140,7 +224,7 @@ export class RoleplayModule {
 
               <!-- Custom Reply & Mic Input Bar -->
               <div class="chat-bottom-input-bar">
-                <input type="text" id="roleplayCustomInput" class="form-input" placeholder="${isDe ? 'Antwort eingeben...' : 'Type your reply...'}" value="${this.activeSelectedPrompt || ''}" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off" />
+                <input type="text" id="roleplayCustomInput" class="form-input" placeholder="${isDe ? 'Antwort eingeben...' : 'Type your reply...'}" value="${this.activeSelectedPrompt || ''}" enterkeyhint="send" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off" />
 
                 <button id="roleplayMicBtn" class="mic-action-btn mobile-fab-mic ${this.isListening ? 'recording' : ''}" title="${isDe ? 'Sprechen' : 'Speak'}">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
@@ -230,7 +314,7 @@ export class RoleplayModule {
     this.container.querySelectorAll('.replay-ai-speech').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const text = decodeURIComponent(e.currentTarget.dataset.text);
-        speechService.speak({ text, rate: 0.95 });
+        speechController.speak({ text, rate: 0.95, intent: SpeakIntent.USER });
       });
     });
 
@@ -239,7 +323,7 @@ export class RoleplayModule {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const text = decodeURIComponent(e.currentTarget.dataset.text);
-        speechService.speak({ text, rate: 0.9 });
+        speechController.speak({ text, rate: 0.9, intent: SpeakIntent.USER });
       });
     });
 
@@ -293,7 +377,7 @@ export class RoleplayModule {
       this._pendingRoleplayStop = true;
       btn.classList.remove('recording');
       btnText.textContent = isDe ? 'Sprechen' : 'Speak';
-      speechService.stopListening();
+      speechController.stopListening();
       return;
     }
 
@@ -304,8 +388,8 @@ export class RoleplayModule {
     interimBox.textContent = isDe ? 'Höre zu... Bitte sprechen.' : 'Listening... Speak now.';
 
     let spokenAccumulator = '';
-    speechService.startListening({
-      lang: speechService.getDefaultRecognitionLang(),
+    speechController.listen({
+      lang: speechController.recognitionLang(),
       continuous: true,
       interimResults: true,
       onInterim: ({ full }) => {
@@ -375,13 +459,20 @@ export class RoleplayModule {
       text: cleanSpoken
     });
 
-    audioRecorder.playChime('tap');
+    audioEngine.playChime('tap');
     this.activeSelectedPrompt = '';
     this.currentStepIdx++;
 
     const scenario = this.getCurrentScenario();
     if (this.currentStepIdx < scenario.steps.length) {
       const nextStep = scenario.steps[this.currentStepIdx];
+
+      // The partner's reply is a direct consequence of the learner's turn, so
+      // it is authorised with a one-shot turn id rather than a gesture. The
+      // id is burned on use and voided by any reset(), so a reply queued
+      // before the user navigated away can never fire afterwards.
+      const turnId = speechController.openTurn();
+
       setTimeout(() => {
         this.chatHistory.push({
           sender: 'ai',
@@ -391,14 +482,19 @@ export class RoleplayModule {
         });
         this.render();
         this.bindEvents();
-        speechService.speak({ text: nextStep.aiSpeech, rate: 0.95 });
+        speechController.speak({
+          text: nextStep.aiSpeech,
+          rate: 0.95,
+          intent: SpeakIntent.TURN,
+          turnId
+        });
       }, 600);
     } else {
       setTimeout(() => {
         this.render();
         this.bindEvents();
         confetti({ particleCount: 70, spread: 60 });
-        audioRecorder.playChime('success');
+        audioEngine.playChime('success');
       }, 400);
     }
 

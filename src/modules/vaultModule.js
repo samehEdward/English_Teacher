@@ -1,7 +1,8 @@
 // Vocabulary Vault & Analytics Dashboard Module
 import { storageService } from '../services/storageService.js';
-import { speechService } from '../services/speechService.js';
-import { audioRecorder } from '../services/audioRecorder.js';
+import { speechController, SpeakIntent } from '../core/speechController.js';
+import { audioEngine } from '../core/audioEngine.js';
+import { actionBar } from '../ui/actionBar.js';
 
 export class VaultModule {
   constructor(container) {
@@ -11,6 +12,70 @@ export class VaultModule {
 
     this.render();
     this.bindEvents();
+  }
+
+  // == module lifecycle ====================================================
+
+  mount() {
+    this.render();
+    this.bindEvents();
+    this.publishActions();
+  }
+
+  unmount() {
+    // No audio state of its own; main.js has already reset the controller.
+    actionBar.setActions(null);
+  }
+
+  /**
+   * Bottom-bar controls.
+   *
+   * mic is null: the vault is a reference view, not a speaking exercise, and
+   * its only audio is per-row word playback. Declaring no mic hides the FAB
+   * rather than offering a button with nothing to listen for.
+   */
+  publishActions() {
+    const isDe = this.currentLang === 'de';
+
+    actionBar.setActions({
+      mic: null,
+      buttons: [
+        {
+          icon: 'save',
+          label: isDe ? 'Neu' : 'Add',
+          ariaLabel: isDe ? 'Neues Wort hinzufügen' : 'Add a new word',
+          onClick: () => this.toggleQuickAdd(true)
+        },
+        {
+          icon: 'hint',
+          label: isDe ? 'Suchen' : 'Search',
+          onClick: () => this.focusSearch()
+        }
+      ]
+    });
+  }
+
+  /** @param {boolean} [forceOpen] open rather than toggle (bar entry point) */
+  toggleQuickAdd(forceOpen = false) {
+    const box = this.container.querySelector('#quickAddWordBox');
+    if (!box) return;
+
+    const isHidden = box.style.display === 'none' || !box.style.display;
+    box.style.display = (forceOpen || isHidden) ? 'block' : 'none';
+
+    if (box.style.display === 'block') {
+      const first = this.container.querySelector('#newWordInput');
+      if (first) first.focus();
+      box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  focusSearch() {
+    const input = this.container.querySelector('#vaultSearchInput');
+    if (!input) return;
+    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    input.focus();
+    input.select();
   }
 
   setLanguage(lang) {
@@ -91,7 +156,7 @@ export class VaultModule {
             <h3 style="font-size: 18px; font-weight: 700; color: #fff;">${isDe ? 'Gespeicherter Wortschatz' : 'Saved Vocabulary'} (${vault.length})</h3>
           </div>
           <div style="display: flex; gap: 10px;">
-            <input type="text" id="vaultSearchInput" class="form-input" placeholder="${isDe ? 'Wörter oder Bedeutungen suchen...' : 'Search words or definitions...'}" value="${this.searchQuery}" style="width: 240px; padding: 8px 12px; font-size: 13px;" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off">
+            <input type="text" id="vaultSearchInput" class="form-input" placeholder="${isDe ? 'Wörter oder Bedeutungen suchen...' : 'Search words or definitions...'}" value="${this.searchQuery}" style="width: 240px; padding: 8px 12px; font-size: 13px;" enterkeyhint="send" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off">
             <button id="addNewWordBtn" class="btn btn-primary btn-sm">
               ${isDe ? '+ Wort hinzufügen' : '+ Add Word'}
             </button>
@@ -102,9 +167,9 @@ export class VaultModule {
         <div id="quickAddWordBox" style="display: none; padding: 18px; border-radius: var(--radius-md); background: rgba(10, 15, 26, 0.85); border: 1px solid var(--border-active); margin-bottom: 12px;">
           <h4 style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 10px;">${isDe ? 'Neues Wort im Tresor speichern' : 'Add New Word to Vault'}</h4>
           <div style="display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 10px; margin-bottom: 10px;">
-            <input type="text" id="newWordInput" class="form-input" placeholder="${isDe ? 'Wort (z.B. gemütlich)' : 'Word (e.g. serendipity)'}" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off">
-            <input type="text" id="newIpaInput" class="form-input" placeholder="${isDe ? 'Lautschrift / IPA (optional)' : 'Phonetics / IPA (optional)'}" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off">
-            <input type="text" id="newDefInput" class="form-input" placeholder="${isDe ? 'Bedeutung / Übersetzung' : 'Definition / Meaning'}" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off">
+            <input type="text" id="newWordInput" class="form-input" placeholder="${isDe ? 'Wort (z.B. gemütlich)' : 'Word (e.g. serendipity)'}" enterkeyhint="send" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off">
+            <input type="text" id="newIpaInput" class="form-input" placeholder="${isDe ? 'Lautschrift / IPA (optional)' : 'Phonetics / IPA (optional)'}" enterkeyhint="send" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off">
+            <input type="text" id="newDefInput" class="form-input" placeholder="${isDe ? 'Bedeutung / Übersetzung' : 'Definition / Meaning'}" enterkeyhint="send" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off">
           </div>
           <div style="display: flex; gap: 8px;">
             <button id="saveNewWordConfirmBtn" class="btn btn-primary btn-sm">${isDe ? 'Speichern' : 'Save Word'}</button>
@@ -184,7 +249,7 @@ export class VaultModule {
     const quickBox = this.container.querySelector('#quickAddWordBox');
     if (addBtn && quickBox) {
       addBtn.addEventListener('click', () => {
-        quickBox.style.display = quickBox.style.display === 'none' ? 'block' : 'none';
+        this.toggleQuickAdd();
       });
     }
 
@@ -203,21 +268,24 @@ export class VaultModule {
         const def = this.container.querySelector('#newDefInput').value.trim();
 
         if (!word) {
-          alert('Please enter a word!');
+          const input = this.container.querySelector('#newWordInput');
+          if (input) input.focus();
+          audioEngine.playChime('error');
           return;
         }
 
         storageService.saveToVault({ word, ipa, def, example: 'Manually added' });
-        audioRecorder.playChime('tap');
+        audioEngine.playChime('tap');
         this.render();
         this.bindEvents();
+        this.publishActions();
       });
     }
 
     this.container.querySelectorAll('.play-vault-word').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const word = e.currentTarget.dataset.word;
-        speechService.speak({ text: word, rate: 0.85 });
+        speechController.speak({ text: word, rate: 0.85, intent: SpeakIntent.USER });
       });
     });
 

@@ -1,70 +1,25 @@
-/* EchoSpeak English Studio - Master Design System */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+/* EchoSpeak — legacy module styles.
+ *
+ * This is the surviving remainder of the old main.css: styles internal to the
+ * seven feature modules (practice boxes, score cards, chat bubbles, vault
+ * table, vocational studio). It is retired module by module as each one moves
+ * onto components.css.
+ *
+ * STRIPPED FROM THE ORIGINAL — do not put any of it back here:
+ *   lines    1- 67  tokens and body rules          -> tokens.css
+ *   lines   78-312  app container, top header, lang
+ *                   switcher, stat chips, voice select,
+ *                   nav tabs, module viewport         -> shell.css
+ *   lines 1397-1764 four stacked mobile media queries
+ *                   (~370 lines of !important) that existed only to referee
+ *                   two competing fixed bottom bars    -> deleted; the v2
+ *                   shell is mobile-first, so there is nothing to override
+ *
+ * Rule for anything added here: no !important, no position:fixed, and no
+ * viewport-level layout. Those belong to shell.css.
+ */
 
-:root {
-  --bg-darkest: #070a12;
-  --bg-card: rgba(18, 25, 42, 0.72);
-  --bg-card-hover: rgba(25, 35, 58, 0.85);
-  --bg-card-elevated: rgba(30, 42, 70, 0.9);
-  
-  --border-glass: rgba(255, 255, 255, 0.08);
-  --border-active: rgba(99, 102, 241, 0.5);
-  --border-focus: #6366f1;
-  
-  --grad-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
-  --grad-accent: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
-  --grad-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  --grad-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0) 100%);
-  
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --text-dim: #64748b;
-  
-  --color-correct: #10b981;
-  --color-correct-bg: rgba(16, 185, 129, 0.15);
-  --color-hesitant: #f59e0b;
-  --color-hesitant-bg: rgba(245, 158, 11, 0.15);
-  --color-missing: #ef4444;
-  --color-missing-bg: rgba(239, 68, 68, 0.15);
-  --color-accent: #06b6d4;
-  
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-full: 9999px;
-  
-  --shadow-glow: 0 0 25px rgba(99, 102, 241, 0.25);
-  --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-}
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  -webkit-tap-highlight-color: transparent;
-}
-
-body {
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  background-color: var(--bg-darkest);
-  color: var(--text-main);
-  line-height: 1.6;
-  min-height: 100vh;
-  position: relative;
-  overflow-x: hidden;
-  -webkit-tap-highlight-color: transparent;
-  -webkit-touch-callout: none;
-  background-image: 
-    radial-gradient(circle at 15% 10%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
-    radial-gradient(circle at 85% 80%, rgba(6, 182, 212, 0.12) 0%, transparent 40%),
-    radial-gradient(circle at 50% 50%, rgba(217, 70, 239, 0.05) 0%, transparent 60%);
-  /* background-attachment: fixed causes severe scroll jank on mobile WebViews
-     because the browser must repaint the full gradient on every scroll frame.
-     Use background-size instead for a visually equivalent fixed look. */
-  background-size: 100% 100vh;
-  background-repeat: no-repeat;
-}
-
+/* Compatibility shim: .glass-panel is still used by module markup. */
 /* Glass panel utility */
 .glass-panel {
   background: var(--bg-card);
@@ -75,240 +30,6 @@ body {
   box-shadow: var(--shadow-card);
 }
 
-/* Application Container */
-.app-container {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 24px 20px 80px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-/* Top Navigation Bar */
-.top-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 24px;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.brand-section {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.brand-icon-wrapper {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: var(--grad-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow-glow);
-  position: relative;
-}
-
-.brand-icon-wrapper svg {
-  width: 24px;
-  height: 24px;
-  stroke: #ffffff;
-}
-
-.brand-title {
-  font-family: 'Outfit', sans-serif;
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.brand-badge {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  padding: 2px 8px;
-  border-radius: var(--radius-full);
-  background: rgba(99, 102, 241, 0.2);
-  color: #a5b4fc;
-  border: 1px solid rgba(99, 102, 241, 0.4);
-}
-
-.header-controls {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-/* Target Language Switcher */
-.lang-switcher {
-  display: flex;
-  align-items: center;
-  background: rgba(15, 23, 42, 0.7);
-  padding: 3px;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--border-glass);
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-.lang-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  border-radius: var(--radius-full);
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 13px;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.lang-btn:hover {
-  color: var(--text-main);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.lang-btn.active {
-  background: var(--grad-primary);
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
-}
-
-.lang-flag {
-  font-size: 15px;
-  line-height: 1;
-}
-
-/* Quick Stats Badges */
-.stat-chip {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 6px 14px;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--border-glass);
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.stat-chip.streak-active {
-  background: rgba(245, 158, 11, 0.12);
-  border-color: rgba(245, 158, 11, 0.3);
-  color: #fcd34d;
-}
-
-.stat-icon {
-  font-size: 15px;
-}
-
-/* Voice Select Dropdown */
-.voice-picker-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 4px 10px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-glass);
-}
-
-.voice-picker-group label {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.voice-select {
-  background: transparent;
-  color: var(--text-main);
-  border: none;
-  font-size: 13px;
-  font-family: inherit;
-  outline: none;
-  cursor: pointer;
-  max-width: 170px;
-}
-
-.voice-select option {
-  background: #0f172a;
-  color: #f8fafc;
-}
-
-/* Main Navigation Tabs */
-.nav-tabs {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.nav-tabs::-webkit-scrollbar {
-  display: none;
-}
-
-.tab-btn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 18px;
-  border-radius: var(--radius-md);
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.tab-btn:hover {
-  color: var(--text-main);
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.tab-btn.active {
-  color: #ffffff;
-  background: rgba(99, 102, 241, 0.18);
-  border-color: rgba(99, 102, 241, 0.45);
-  box-shadow: 0 0 15px rgba(99, 102, 241, 0.15);
-}
-
-.tab-badge {
-  font-size: 11px;
-  padding: 2px 7px;
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.1);
-}
-
-/* Module Container */
-.module-view {
-  display: none;
-  animation: fadeIn 0.3s ease-out;
-}
-
-.module-view.active {
-  display: block;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
 
 /* Studio Section Headers */
 .section-header {
@@ -1394,371 +1115,191 @@ input:invalid, textarea:invalid {
   font-size: 13px;
 }
 
+
 /* ==========================================================================
-   Mobile Responsive & Smartphone Optimization Styles
+   Mobile reconciliation
+   --------------------------------------------------------------------------
+   The stripped media queries also carried the phone type scale, so the legacy
+   module headings were left at their desktop sizes. Rather than reinstate 370
+   lines of !important overrides, the handful of legacy heading and layout
+   classes are mapped onto the v2 tokens here — mobile-first, with desktop
+   restored behind a min-width query. This block shrinks as modules move onto
+   components.css.
    ========================================================================== */
-@media (max-width: 880px) {
-  .app-container {
-    padding: 12px 12px calc(90px + env(safe-area-inset-bottom, 20px)) 12px;
-    gap: 16px;
-  }
 
-  /* Two-column studio grids stack vertically on tablets & phones */
-  .studio-grid {
-    grid-template-columns: 1fr !important;
-    gap: 16px;
-  }
-
-  /* Header Layout */
-  .top-header {
-    padding: 14px 16px;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-  }
-
-  .brand-section {
-    justify-content: space-between;
-    width: 100%;
-  }
-
-  .header-controls {
-    justify-content: flex-start;
-    gap: 8px;
-    width: 100%;
-    overflow-x: auto;
-    padding-bottom: 2px;
-  }
-
-  /* Nav Tabs momentum scrolling */
-  .nav-tabs {
-    padding: 6px;
-    gap: 6px;
-    -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x proximity;
-  }
-
-  .tab-btn {
-    padding: 8px 14px;
-    font-size: 13px;
-    scroll-snap-align: start;
-    flex-shrink: 0;
-  }
-
-  /* Vocational Studio Mobile Adjustments */
-  .voc-config-bar {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 14px;
-    gap: 14px;
-  }
-
-  .voc-domain-selector {
-    flex-direction: column;
-    width: 100%;
-    gap: 8px;
-  }
-
-  .voc-domain-btn {
-    width: 100%;
-    padding: 10px 14px;
-  }
-
-  .voc-modes-nav {
-    width: 100%;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    padding-bottom: 4px;
-    gap: 6px;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .voc-mode-tab {
-    flex-shrink: 0;
-    padding: 7px 13px;
-    font-size: 12px;
-  }
-
-  .voc-vocab-grid {
-    grid-template-columns: 1fr;
-  }
+.section-header {
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
 }
 
+.section-title {
+  font-family: var(--font);
+  font-size: var(--fs-xl);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.section-subtitle { font-size: var(--fs-sm); line-height: 1.45; }
+
+/* Two-column studio layouts collapse to one column on a phone. */
+.studio-layout,
+.dual-playback-grid,
+.voc-vocab-grid {
+  grid-template-columns: 1fr;
+}
+
+/* Legacy inline control bars are no longer fixed — the shared .action-bar in
+   index.html owns the bottom of the screen. These now flow inline, wrap, and
+   keep 48px tap targets. */
+.control-bar,
+.control-bar.mobile-app-bar {
+  position: static;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  padding: var(--sp-2) 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.control-bar .btn,
+.control-bar .mic-action-btn { min-height: var(--tap-min); }
+
+/* Fixed pixel widths break at 360px. */
+.form-input[style*="width: 240px"] { width: 100% !important; }
+
+@media (min-width: 768px) {
+  .section-title { font-size: 26px; }
+  .studio-layout { grid-template-columns: 1.4fr 1fr; }
+  .dual-playback-grid { grid-template-columns: 1fr 1fr; }
+  .voc-vocab-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+}
+
+/* Grid and flex items default to min-width:auto, so they refuse to shrink
+   below their min-content size. One long German compound (Patientengefährdung,
+   Qualitätskontrolle) or a nowrap header row is then enough to blow the card
+   past the 375px viewport, where overflow-x:hidden silently clips it. */
+.studio-layout > *,
+.practice-card,
+.card-header-bar,
+.card-header-bar > *,
+.voc-chat-stream > *,
+.dual-playback-grid > *,
+.voc-vocab-grid > * {
+  min-width: 0;
+}
+
+.practice-card,
+.voc-scenario-context-banner,
+.feedback-box,
+.chat-bubble,
+.voc-chat-bubble {
+  overflow-wrap: anywhere;
+}
+
+/* Header rows must wrap rather than push a badge off-screen. */
+.card-header-bar { flex-wrap: wrap; }
+
 /* ==========================================================================
-   Mobile-First Sticky App Bar & Responsive Controls (< 768px)
+   Superseded by the shared bottom action bar
+   --------------------------------------------------------------------------
+   Every module now declares its controls through ui/actionBar.js, so the old
+   per-module control bars and their inline mic buttons are duplicates. They
+   are hidden rather than deleted from the markup: the modules' own methods
+   still read those elements to update label text and recording classes, so
+   removing them would mean null-guarding a dozen call sites for no gain.
+   Hidden elements are still found by querySelector, so nothing breaks.
+
+   When a module's markup is rewritten onto components.css, delete its
+   .control-bar block outright and drop it from this list.
    ========================================================================== */
+
+.control-bar.mobile-app-bar,
+.mic-action-btn.mobile-fab-mic {
+  display: none !important;
+}
+
+/* .section-actions is a nowrap flex row holding a <select> plus buttons. A
+   <select> takes its intrinsic width from its LONGEST option, so a lesson
+   titled "A1 - Das morgendliche Kaffeeritual" pushed the row ~85px past a
+   375px viewport, where overflow-x:hidden clipped the import button off the
+   screen entirely. Wrap the row and let the select shrink with ellipsis. */
+.section-actions {
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.section-actions > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.section-actions select {
+  max-width: 100%;
+  text-overflow: ellipsis;
+}
+
+/* Card headers nest an inline-styled `display:flex; gap:8px` row that carries
+   a title plus action buttons. The inline style has no flex-wrap, so at phone
+   width the trailing button (e.g. vocational's "Neustart") overflowed its own
+   parent and was clipped. The row has no class of its own, hence the child
+   selector. */
+.card-header-bar > div {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+/* A chat bubble that carries a full coaching card is not a chat bubble any
+   more: it holds a correction, a multi-term vocabulary entry with IPA, a
+   follow-up step and an Arabic note. Inside the normal 85% bubble width that
+   left ~129px of content on a 375px screen, and the inherited
+   `overflow-wrap: anywhere` then broke German compounds mid-word
+   ("Patientengefähr / ung"). Feedback bubbles take the full conversation
+   width on a phone; the 85% bubble look returns on wider screens. */
 @media (max-width: 768px) {
-  /* Prevent scrollable content from being hidden behind sticky bottom bar */
-  .app-container {
-    padding-bottom: calc(96px + env(safe-area-inset-bottom, 20px)) !important;
+  .chat-bubble-wrap.has-feedback {
+    max-width: 100%;
+    width: 100%;
   }
 
-  .module-view {
-    padding-bottom: calc(88px + env(safe-area-inset-bottom, 16px));
+  .chat-bubble-wrap.has-feedback .chat-bubble {
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
-  .chat-conversation,
-  .voc-chat-container {
-    padding-bottom: 95px !important;
+  /* The avatar is decoration here; the content needs the pixels. */
+  .chat-bubble-wrap.has-feedback .chat-avatar {
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
+    font-size: 15px;
   }
+}
 
-  /* Fixed Modern Glassmorphic Bottom App Bar */
-  .control-bar,
-  .mobile-app-bar {
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    width: 100% !important;
-    z-index: 990 !important;
-    background: rgba(10, 15, 26, 0.92) !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
-    border-radius: 20px 20px 0 0 !important;
-    border-top: 1px solid rgba(99, 102, 241, 0.45) !important;
-    border-left: none !important;
-    border-right: none !important;
-    border-bottom: none !important;
-    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.75) !important;
-    padding: 8px 16px calc(10px + env(safe-area-inset-bottom, 16px)) 16px !important;
-    margin: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-around !important;
-    gap: 8px !important;
-    flex-wrap: nowrap !important;
-  }
+/* Technical terms and IPA must break at separators, never mid-word - they
+   are the thing the learner is supposed to read and pronounce. This undoes
+   the inherited `overflow-wrap: anywhere` for these specific elements. */
+.voc-vocab-code,
+.voc-fb-item code,
+.feedback-card code {
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: none;
+}
 
-  .playback-controls {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  /* Primary Prominent Floating Action Button (FAB) */
-  .mic-action-btn,
-  .mobile-fab-mic {
-    min-width: 58px !important;
-    min-height: 58px !important;
-    width: 58px !important;
-    height: 58px !important;
-    padding: 0 !important;
-    border-radius: 50% !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    position: relative !important;
-    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.5), 0 0 0 3px rgba(10, 15, 26, 0.9) !important;
-    transform: translateY(-14px) !important;
-    flex-shrink: 0 !important;
-    z-index: 995 !important;
-    cursor: pointer;
-  }
-
-  .mic-action-btn svg,
-  .mobile-fab-mic svg {
-    width: 22px;
-    height: 22px;
-    margin: 0;
-  }
-
-  .mic-action-btn span,
-  .mobile-fab-mic span {
-    font-size: 9px;
-    font-weight: 700;
-    line-height: 1;
-    margin-top: 2px;
-    max-width: 52px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+/* Module buttons label themselves with full scenario titles
+   ("Active-Directory-Konto gesperrt (Deeskalation)"). A nowrap button wider
+   than its row overflows it, and no amount of flex-wrap on the parent helps
+   because the button itself cannot shrink. Let module button labels wrap at
+   phone width. Scoped to .module-view so the shell's fixed action bar - which
+   lives outside it and relies on single-line labels - is untouched. */
+@media (max-width: 768px) {
+  .module-view .btn {
+    max-width: 100%;
+    white-space: normal;
     text-align: center;
-  }
-
-  .mic-action-btn.recording,
-  .mobile-fab-mic.recording {
-    transform: translateY(-14px) scale(1.08) !important;
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
-    animation: fabPulse 1.2s infinite ease-in-out !important;
-  }
-
-  /* Accessibility 48px Touch Target Standard */
-  .btn,
-  .tab-btn,
-  .form-input {
-    min-height: 48px;
-  }
-
-  .btn-sm {
-    min-height: 44px;
-    padding: 6px 14px;
-  }
-
-  .btn {
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    overflow: hidden;
-  }
-
-  .btn-long-text {
-    display: none;
-  }
-
-  .btn-short-text {
-    display: inline;
-  }
-
-  /* Roleplay & Vocational Mobile Chat Input Bar */
-  .chat-bottom-input-bar {
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    width: 100% !important;
-    z-index: 990 !important;
-    background: rgba(10, 15, 26, 0.94) !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
-    border-top: 1px solid rgba(99, 102, 241, 0.45) !important;
-    padding: 8px 14px calc(10px + env(safe-area-inset-bottom, 16px)) 14px !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.75) !important;
-  }
-
-  .chat-bottom-input-bar .form-input {
-    flex: 1;
-    min-height: 48px;
-    font-size: 14px;
-    border-radius: var(--radius-full);
-    padding: 0 16px;
-    border-color: rgba(99, 102, 241, 0.35);
-  }
-
-  .chat-bottom-input-bar .mic-action-btn,
-  .chat-bottom-input-bar #roleplayMicBtn,
-  .chat-bottom-input-bar #vocMicBtn {
-    min-width: 48px !important;
-    min-height: 48px !important;
-    width: 48px !important;
-    height: 48px !important;
-    border-radius: 50% !important;
-    transform: none !important;
-    padding: 0 !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    box-shadow: 0 2px 12px rgba(99, 102, 241, 0.4);
-  }
-
-  .chat-bottom-input-bar .btn-primary {
-    min-width: 48px;
-    min-height: 48px;
-    padding: 0 16px;
-    border-radius: var(--radius-full);
-    font-size: 13px;
-    flex-shrink: 0;
+    height: auto;
   }
 }
-
-@keyframes fabPulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.8), 0 4px 20px rgba(239, 68, 68, 0.5), 0 0 0 3px rgba(10, 15, 26, 0.9);
-  }
-  50% {
-    box-shadow: 0 0 0 16px rgba(239, 68, 68, 0), 0 6px 25px rgba(239, 68, 68, 0.8), 0 0 0 3px rgba(10, 15, 26, 0.9);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0), 0 4px 20px rgba(239, 68, 68, 0.5), 0 0 0 3px rgba(10, 15, 26, 0.9);
-  }
-}
-
-/* ==========================================================================
-   Small Mobile Typography & Padding Adjustments (< 640px)
-   ========================================================================== */
-@media (max-width: 640px) {
-  .section-title {
-    font-size: 19px !important;
-    letter-spacing: -0.3px;
-  }
-
-  .section-subtitle {
-    font-size: 12px !important;
-  }
-
-  .practice-card {
-    padding: 14px !important;
-  }
-
-  .card-header-bar {
-    padding-bottom: 8px !important;
-  }
-
-  h3 {
-    font-size: 17px !important;
-  }
-
-  h4 {
-    font-size: 15px !important;
-  }
-
-  .reading-text-viewport {
-    font-size: 18px !important;
-    line-height: 1.8 !important;
-    padding: 14px !important;
-  }
-
-  .live-speech-feedback {
-    padding: 10px 14px !important;
-    font-size: 13px !important;
-  }
-
-  .waveform-canvas {
-    height: 48px !important;
-  }
-}
-
-@media (max-width: 480px) {
-  .brand-title {
-    font-size: 19px;
-  }
-
-  .brand-badge {
-    font-size: 10px;
-    padding: 1px 6px;
-  }
-
-  .stat-chip {
-    padding: 4px 10px;
-    font-size: 11px;
-  }
-
-  .voice-picker-group {
-    padding: 3px 8px;
-  }
-
-  .voice-select {
-    max-width: 120px;
-    font-size: 12px;
-  }
-
-  .modal-content {
-    padding: 16px 14px;
-    border-radius: var(--radius-md);
-  }
-
-  /* Big touch friendly buttons */
-  .suggested-reply-card {
-    min-height: 48px;
-    padding: 10px 14px;
-  }
-
-  .btn {
-    min-height: 48px;
-  }
-}
-
-

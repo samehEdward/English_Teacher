@@ -1,8 +1,11 @@
 // Shadowing & Rhythm Lab Module (EchoTalk Technique)
 import { SHADOWING_LESSONS } from '../data/lessonsData.js';
 import { GERMAN_SHADOWING_LESSONS } from '../data/lessonsData_de.js';
-import { speechService } from '../services/speechService.js';
-import { audioRecorder } from '../services/audioRecorder.js';
+import { speechController, SpeakIntent } from '../core/speechController.js';
+import { audioEngine } from '../core/audioEngine.js';
+import { actionBar } from '../ui/actionBar.js';
+import { statusStrip } from '../ui/statusStrip.js';
+import { playLocalAudio } from '../ui/playback.js';
 import { DiffEngine } from '../services/diffEngine.js';
 import { storageService } from '../services/storageService.js';
 
@@ -22,6 +25,64 @@ export class ShadowingModule {
 
   loadLessons() {
     this.lessons = this.currentLang === 'de' ? GERMAN_SHADOWING_LESSONS : SHADOWING_LESSONS;
+  }
+
+  // == module lifecycle ====================================================
+  // Minimal contract (ARCHITECTURE.md section 9). This module still renders
+  // its own inline control bar rather than publishing to the shared bottom
+  // bar, so it does not define publishActions() yet - see MIGRATION.md.
+
+  mount() {
+    this.render();
+    this.bindEvents();
+    this.publishActions();
+  }
+
+  unmount() {
+    // main.js already called speechController.reset(); clear the view-local
+    // mirror so a re-mount starts from a clean state.
+    this.isRecording = false;
+    actionBar.setActions(null);
+  }
+
+  /**
+   * Bottom-bar controls.
+   *
+   * Sentence navigation is deliberately NOT here: this module already has a
+   * stepper-dot row for that, and the thumb bar is for practice actions. The
+   * FAB drives speech recognition; "Aufnahme" is the separate MediaRecorder
+   * pass for A/B playback. The two can never run at once - see
+   * toggleRecordShadow().
+   */
+  publishActions() {
+    const isDe = this.currentLang === 'de';
+
+    actionBar.setActions({
+      mic: {
+        onStart: () => this.toggleRecordShadow(),
+        onStop: () => this.toggleRecordShadow()
+      },
+      buttons: [
+        {
+          icon: 'play',
+          label: isDe ? 'Nativ' : 'Native',
+          ariaLabel: isDe ? 'Muttersprachler anhören' : 'Hear the native speaker',
+          onClick: () => this.playNativeSentence(1.0)
+        },
+        {
+          icon: 'slow',
+          label: isDe ? 'Langsam' : 'Slow',
+          ariaLabel: isDe ? 'Mit 0,75-facher Geschwindigkeit anhören' : 'Play at 0.75x speed',
+          onClick: () => this.playNativeSentence(0.75)
+        },
+        {
+          icon: 'save',
+          label: isDe ? 'Aufnahme' : 'Record',
+          ariaLabel: isDe ? 'Eigene Aufnahme zum Vergleich' : 'Record your own audio to compare',
+          onClick: () => this.toggleRecordPlayback()
+        }
+      ]
+    });
   }
 
   setLanguage(lang) {
@@ -116,6 +177,13 @@ export class ShadowingModule {
             <span id="shadowRecordText">${isDe ? 'Shadow' : 'Shadow'}</span>
           </button>
 
+          <!-- Second, separate pass: records audio for A/B playback WITHOUT
+               speech recognition. Sequential by design - the two can never
+               hold the microphone at the same time. -->
+          <button id="shadowPlaybackRecBtn" class="btn btn-secondary btn-sm" title="${isDe ? 'Eigene Aufnahme für Vergleich' : 'Record your own audio to compare'}">
+            <span>${isDe ? '⏺ Aufnahme' : '⏺ Record'}</span>
+          </button>
+
           <div style="display: flex; gap: 6px;">
             <button id="prevSentenceBtn" class="btn btn-secondary btn-sm" ${this.currentSentenceIdx === 0 ? 'disabled' : ''} title="${isDe ? 'Vorheriger Satz' : 'Previous sentence'}">
               <span class="btn-short-text">←</span>
@@ -207,6 +275,11 @@ export class ShadowingModule {
       }
     });
 
+    const playbackRecBtn = this.container.querySelector('#shadowPlaybackRecBtn');
+    if (playbackRecBtn) {
+      playbackRecBtn.addEventListener('click', () => this.toggleRecordPlayback());
+    }
+
     this.container.querySelector('#shadowRecordBtn').addEventListener('click', () => {
       this.toggleRecordShadow();
     });
@@ -222,7 +295,7 @@ export class ShadowingModule {
     if (replayUser) {
       replayUser.addEventListener('click', () => {
         if (this.userAudioUrl) {
-          audioRecorder.playAudio(this.userAudioUrl);
+          playLocalAudio(this.userAudioUrl);
         }
       });
     }
@@ -230,9 +303,10 @@ export class ShadowingModule {
 
   playNativeSentence(rate = 1.0) {
     const sentence = this.getCurrentSentence();
-    speechService.speak({
+    speechController.speak({
       text: sentence.text,
-      rate
+      rate,
+      intent: SpeakIntent.USER
     });
   }
 
@@ -288,114 +362,139 @@ export class ShadowingModule {
     }
   }
 
+  /**
+   * Shadowing capture — SPEECH RECOGNITION ONLY.
+   *
+   * v1 started MediaRecorder and SpeechRecognition against the same device
+   * and papered over the Android collision with a user-agent sniff
+   * (`_isMobileSession`), which still broke on Android tablets reporting a
+   * desktop UA and on desktop Chrome with a single-channel USB mic.
+   *
+   * PRODUCT DECISION: scoring is the point of this exercise, so the mic goes
+   * to speech recognition. The side-by-side playback recording is now a
+   * separate, explicitly user-initiated pass (`toggleRecordPlayback`) that
+   * runs without recognition. The two passes are sequential and can never
+   * overlap, because speechController models LISTENING and RECORDING as
+   * mutually exclusive states — the collision is unrepresentable rather than
+   * merely avoided.
+   */
   async toggleRecordShadow() {
     const btn = this.container.querySelector('#shadowRecordBtn');
     const textSpan = this.container.querySelector('#shadowRecordText');
     const canvas = this.container.querySelector('#shadowWaveformCanvas');
     const isDe = this.currentLang === 'de';
 
-    if (this.isRecording) {
+    const resetButton = () => {
+      if (btn) btn.classList.remove('recording');
+      if (textSpan) textSpan.textContent = isDe ? 'Shadow' : 'Shadow';
       this.isRecording = false;
-      this._shadowStoppedByUser = true;
-      btn.classList.remove('recording');
-      textSpan.textContent = isDe ? 'Shadow' : 'Shadow';
       this.stopWaveform(canvas);
-      speechService.stopListening();
+    };
 
-      if (!this._isMobileSession) {
-        const recResult = await audioRecorder.stopRecording();
-        if (recResult && recResult.url) {
-          this.userAudioUrl = recResult.url;
-          const grid = this.container.querySelector('#dualPlaybackGrid');
-          if (grid) grid.style.display = 'grid';
-        }
-      }
-
-      const spoken = (this._capturedSpoken || '').trim();
-      if (spoken.length > 0) {
-        this.evaluateShadow(spoken);
-      }
+    if (speechController.isListening()) {
+      // Graceful stop: flushes buffered audio so the final transcript still
+      // arrives through onResult.
+      speechController.stopListening();
       return;
     }
 
-    // Start recording
-    this.isRecording = true;
-    this._shadowStoppedByUser = false;
     this._capturedSpoken = '';
-    btn.classList.add('recording');
-    textSpan.textContent = isDe ? 'Stop' : 'Stop';
-    this.userAudioUrl = null;
+    this.isRecording = true;
+    if (btn) btn.classList.add('recording');
+    if (textSpan) textSpan.textContent = isDe ? 'Stop' : 'Stop';
 
-    // Detect mobile / touch devices where concurrent getUserMedia + SpeechRecognition collides
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
-      || (window.matchMedia && window.matchMedia('(max-width: 768px)').matches && 'ontouchstart' in window);
-    this._isMobileSession = isMobile;
+    // Simulated waveform: recognition owns the mic, so there is no stream to
+    // analyse. Honest about what it is, and it costs nothing.
+    this.startWaveform(canvas);
 
-    if (isMobile) {
-      // On mobile, run simulated waveform to keep the microphone free for SpeechRecognition
-      this.startWaveform(canvas);
-    } else {
-      try {
-        await audioRecorder.startRecording(canvas);
-      } catch (e) {
-        alert(isDe 
-          ? 'Mikrofonzugriff ist für das Shadowing erforderlich. Bitte erlauben Sie den Zugriff im Browser.' 
-          : 'Microphone permission required for shadowing practice.');
-        this.isRecording = false;
-        btn.classList.remove('recording');
-        textSpan.textContent = isDe ? 'Shadow' : 'Shadow';
-        return;
-      }
-    }
-
-    speechService.startListening({
-      lang: speechService.getDefaultRecognitionLang(),
+    const result = await speechController.listen({
+      lang: speechController.recognitionLang(),
       continuous: true,
       interimResults: true,
+
       onInterim: ({ full }) => {
         this._capturedSpoken = full;
       },
+
       onResult: (finalText) => {
-        const spoken = finalText || this._capturedSpoken;
-        if (spoken && spoken.trim().length > 0) {
-          this.evaluateShadow(spoken);
-        }
+        const spoken = (finalText || this._capturedSpoken || '').trim();
+        resetButton();
+        if (spoken) this.evaluateShadow(spoken);
+        speechController.finishProcessing();
       },
+
       onError: (err) => {
-        console.warn('Shadowing speech recognition error:', err);
-        const errType = err && (err.error || err.message);
-        if (errType === 'no-speech') {
-          return;
-        }
-        this.isRecording = false;
-        btn.classList.remove('recording');
-        textSpan.textContent = isDe ? 'Shadow' : 'Shadow';
-        this.stopWaveform(canvas);
-        if (!this._isMobileSession) {
-          audioRecorder.stopRecording();
-        }
+        // no-speech is routine hesitation, not a failure.
+        if (err && err.error === 'no-speech') return;
+        resetButton();
+        statusStrip.showPermission(err && err.permission ? err.permission : 'denied', {
+          onRetry: () => this.toggleRecordShadow()
+        });
       },
+
       onEnd: () => {
-        if (this._shadowStoppedByUser) {
-          this._shadowStoppedByUser = false;
-          return;
-        }
-        // Auto-end by silence on mobile: if speech was captured, evaluate it
-        if (this.isRecording) {
-          this.isRecording = false;
-          btn.classList.remove('recording');
-          textSpan.textContent = isDe ? 'Shadow' : 'Shadow';
-          this.stopWaveform(canvas);
-          if (!this._isMobileSession) {
-            audioRecorder.stopRecording();
-          }
-          const spoken = (this._capturedSpoken || '').trim();
-          if (spoken.length > 0) {
-            this.evaluateShadow(spoken);
-          }
-        }
+        // Silence timeout with something captured but no final event.
+        if (!this.isRecording) return;
+        const spoken = (this._capturedSpoken || '').trim();
+        resetButton();
+        if (spoken) this.evaluateShadow(spoken);
       }
     });
+
+    if (!result.ok) {
+      resetButton();
+      if (result.reason === 'permission') {
+        statusStrip.showPermission(result.permission, {
+          onRetry: () => this.toggleRecordShadow()
+        });
+      } else if (result.reason === 'stt-unsupported') {
+        statusStrip.info(isDe
+          ? 'Spracherkennung ist hier nicht verfügbar. Nutzen Sie die Aufnahme zum Vergleichen.'
+          : 'Speech recognition is unavailable here. Use the recording pass to compare instead.');
+      }
+    }
+  }
+
+  /**
+   * Second pass: record audio for the A/B playback comparison, with NO
+   * recognition running. Separate button, separate user gesture, never
+   * concurrent with toggleRecordShadow().
+   */
+  async toggleRecordPlayback() {
+    const btn = this.container.querySelector('#shadowPlaybackRecBtn');
+    const isDe = this.currentLang === 'de';
+    const canvas = this.container.querySelector('#shadowWaveformCanvas');
+
+    if (speechController.isRecording()) {
+      const captured = await speechController.stopRecording();
+      if (btn) btn.classList.remove('recording');
+      if (captured && captured.url) {
+        this.userAudioUrl = captured.url;
+        const grid = this.container.querySelector('#dualPlaybackGrid');
+        if (grid) grid.style.display = 'grid';
+      }
+      speechController.finishProcessing();
+      return;
+    }
+
+    if (btn) btn.classList.add('recording');
+
+    const result = await speechController.startRecording({
+      canvas,
+      onError: (err) => {
+        if (btn) btn.classList.remove('recording');
+        statusStrip.showPermission(err.permission || 'denied');
+      }
+    });
+
+    if (!result.ok) {
+      if (btn) btn.classList.remove('recording');
+      if (result.reason === 'mic-busy-listening') {
+        statusStrip.info(isDe
+          ? 'Bitte zuerst die Spracherkennung beenden.'
+          : 'Stop speech recognition first.');
+      }
+    }
   }
 
   evaluateShadow(spoken) {
@@ -415,7 +514,7 @@ export class ShadowingModule {
       scoreText.textContent = `${isDe ? 'Genauigkeit:' : 'Accuracy:'} ${result.accuracy}%`;
       scoreDetail.textContent = `${isDe ? 'Gesprochen:' : 'Spoken:'} "${spoken || (isDe ? 'Höre zu...' : 'Listening...')}"`;
       if (result.accuracy >= 80) {
-        audioRecorder.playChime('success');
+        audioEngine.playChime('success');
       }
     }
 

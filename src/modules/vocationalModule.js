@@ -9,8 +9,10 @@ import {
   VOCATIONAL_POLISH_PRESETS, 
   VOCATIONAL_QUIZZES 
 } from '../data/vocationalData.js';
-import { speechService } from '../services/speechService.js';
-import { audioRecorder } from '../services/audioRecorder.js';
+import { speechController, SpeakIntent } from '../core/speechController.js';
+import { audioEngine } from '../core/audioEngine.js';
+import { actionBar } from '../ui/actionBar.js';
+import { statusStrip } from '../ui/statusStrip.js';
 import { storageService } from '../services/storageService.js';
 import confetti from 'canvas-confetti';
 
@@ -61,6 +63,131 @@ export class VocationalModule {
     this.bindEvents();
   }
 
+  // == module lifecycle ====================================================
+  // Contract from ARCHITECTURE.md section 9: constructor renders markup only,
+  // mount() may bind but must never speak, unmount() releases everything.
+
+  mount() {
+    this.render();
+    this.bindEvents();
+    this.publishActions();
+    // Deliberately silent. The opening line of a scenario is spoken only when
+    // the learner taps its replay button.
+  }
+
+  unmount() {
+    // main.js already called speechController.reset(); clear the view-local
+    // mirror of that state so a re-mount starts clean.
+    this.isListening = false;
+    actionBar.setActions(null);
+  }
+
+  /**
+   * Declare this module's bottom-bar controls. The FAB is owned by the speech
+   * state machine; this only supplies the mic callbacks and the four
+   * secondary actions.
+   */
+  publishActions() {
+    const isDe = this.currentLang === 'de';
+
+    // Only the roleplay mode drives the microphone; the vocabulary, polish
+    // and quiz modes are text exercises.
+    if (this.currentMode !== 'roleplay') {
+      actionBar.setActions({
+        mic: null,
+        buttons: [
+          {
+            icon: 'reset',
+            label: isDe ? 'Neu' : 'Reset',
+            onClick: () => { this.initRoleplay(); this.mount(); }
+          }
+        ]
+      });
+      return;
+    }
+
+    actionBar.setActions({
+      mic: { onStart: () => this.startDictation(), onStop: () => speechController.stopListening() },
+      buttons: [
+        {
+          icon: 'replay',
+          label: isDe ? 'Hören' : 'Listen',
+          onClick: () => this.speakCurrentStep()
+        },
+        {
+          icon: 'hint',
+          label: isDe ? 'Tipp' : 'Hint',
+          onClick: () => this.revealHint()
+        },
+        {
+          icon: 'send',
+          label: isDe ? 'Senden' : 'Send',
+          onClick: () => this.sendFromInput()
+        },
+        {
+          icon: 'reset',
+          label: isDe ? 'Neu' : 'Reset',
+          onClick: () => { this.initRoleplay(); this.mount(); }
+        }
+      ]
+    });
+  }
+
+  /** Speak the current partner line. Explicit user action, hence USER intent. */
+  speakCurrentStep() {
+    const step = this.getCurrentStep();
+    if (!step || !step.aiSpeech) return;
+    speechController.speak({ text: step.aiSpeech, rate: 0.95, intent: SpeakIntent.USER });
+  }
+
+  revealHint() {
+    const step = this.getCurrentStep();
+    if (!step || !step.suggestedResponses || !step.suggestedResponses.length) return;
+
+    const best = step.suggestedResponses[step.bestResponseIdx || 0];
+    const input = this.container.querySelector('#vocCustomReplyInput');
+    if (input) {
+      input.value = best;
+      this.activeSelectedPrompt = best;
+      input.focus();
+    }
+    statusStrip.info(this.currentLang === 'de' ? 'Vorschlag eingefügt.' : 'Suggestion inserted.');
+  }
+
+  sendFromInput() {
+    const input = this.container.querySelector('#vocCustomReplyInput');
+    const text = (input && input.value.trim()) || this.activeSelectedPrompt;
+    if (!text) {
+      statusStrip.info(this.currentLang === 'de'
+        ? 'Bitte zuerst antworten oder sprechen.'
+        : 'Type or speak a reply first.');
+      return;
+    }
+    this.processUserReply(text);
+  }
+
+  /** Mic capture into the reply field. Never runs beside a MediaRecorder. */
+  async startDictation() {
+    const input = this.container.querySelector('#vocCustomReplyInput');
+
+    const result = await speechController.listen({
+      onInterim: ({ full }) => { if (input) input.value = full; },
+      onResult: (transcript) => {
+        if (input) input.value = transcript;
+        this.activeSelectedPrompt = transcript;
+        speechController.finishProcessing();
+      },
+      onError: (err) => {
+        if (err && err.error === 'no-speech') return;
+        if (err && err.permission) statusStrip.showPermission(err.permission);
+      }
+    });
+
+    if (!result.ok && result.reason === 'permission') {
+      statusStrip.showPermission(result.permission, { onRetry: () => this.startDictation() });
+    }
+  }
+
   getScenarios() {
     const langScenarios = VOCATIONAL_SCENARIOS[this.currentLang] || VOCATIONAL_SCENARIOS.de;
     return langScenarios[this.currentDomain] || [];
@@ -89,9 +216,10 @@ export class VocationalModule {
         avatar: step.avatar,
         text: step.aiSpeech
       });
-      setTimeout(() => {
-        speechService.speak({ text: step.aiSpeech, rate: 0.95 });
-      }, 350);
+      // NO automatic speech. initRoleplay() runs on render, on domain change
+      // and on language switch; speaking here is the rogue TTS that made the
+      // app talk on its own. The opening line gets a replay button instead,
+      // and speechController would refuse this call regardless.
     }
   }
 
@@ -253,7 +381,7 @@ export class VocationalModule {
           <!-- Chat Stream -->
           <div class="chat-conversation" id="vocChatStream" style="min-height: 280px; max-height: 440px; overflow-y: auto; padding: 12px 6px;">
             ${this.chatHistory.map(msg => `
-              <div class="chat-bubble-wrap ${msg.sender}">
+              <div class="chat-bubble-wrap ${msg.sender}${msg.feedback ? ' has-feedback' : ''}">
                 <div class="chat-avatar">${msg.avatar}</div>
                 <div class="chat-bubble">
                   <div style="font-size: 11px; opacity: 0.7; margin-bottom: 4px;">${msg.speaker}</div>
@@ -295,7 +423,7 @@ export class VocationalModule {
 
               <!-- Custom Text / Mic Input Bar -->
               <div class="chat-bottom-input-bar">
-                <input type="text" id="vocCustomReplyInput" class="form-input" placeholder="${isDe ? 'Antwort eingeben...' : 'Type reply...'}" value="${this.activeSelectedPrompt || ''}" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off" />
+                <input type="text" id="vocCustomReplyInput" class="form-input" placeholder="${isDe ? 'Antwort eingeben...' : 'Type reply...'}" value="${this.activeSelectedPrompt || ''}" enterkeyhint="send" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off" />
                 
                 <button id="vocMicBtn" class="mic-action-btn mobile-fab-mic ${this.isListening ? 'recording' : ''}" title="${isDe ? 'Sprechen' : 'Speak'}">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
@@ -461,7 +589,7 @@ export class VocationalModule {
 
           <!-- Search Box -->
           <div style="position: relative; min-width: 260px;">
-            <input type="text" id="vocVocabSearchInput" class="form-input" style="padding-left: 34px;" placeholder="${isDe ? 'Begriff oder Kategorie suchen...' : 'Search term or category...'}" value="${this.vocabSearch}" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off" />
+            <input type="text" id="vocVocabSearchInput" class="form-input" style="padding-left: 34px;" placeholder="${isDe ? 'Begriff oder Kategorie suchen...' : 'Search term or category...'}" value="${this.vocabSearch}" enterkeyhint="send" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off" />
             <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); opacity: 0.5;">🔍</span>
           </div>
         </div>
@@ -582,7 +710,7 @@ export class VocationalModule {
             </button>
           </div>
 
-          <textarea id="vocPolishTextarea" class="form-textarea" style="min-height: 90px;" placeholder="${isDe ? 'Fügen Sie hier Ihren Textentwurf ein...' : 'Paste or type your draft text here...'}" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off">${activePreset ? activePreset.rawDraft : ''}</textarea>
+          <textarea id="vocPolishTextarea" class="form-textarea" style="min-height: 90px;" placeholder="${isDe ? 'Fügen Sie hier Ihren Textentwurf ein...' : 'Paste or type your draft text here...'}" enterkeyhint="done" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off">${activePreset ? activePreset.rawDraft : ''}</textarea>
           
           <button id="vocRunPolishBtn" class="btn btn-primary" style="align-self: flex-end; padding: 10px 24px;">
             ✨ ${isDe ? 'Text analysieren & veredeln' : 'Analyze & Polish Text'}
@@ -777,11 +905,11 @@ export class VocationalModule {
       tab.addEventListener('click', () => {
         const mode = tab.dataset.mode;
         if (mode !== this.currentMode) {
-          speechService.stopSpeaking();
-          speechService.stopListening();
+          speechController.reset('mode-switch');
           this.currentMode = mode;
           this.render();
           this.bindEvents();
+          this.publishActions();
         }
       });
     });
@@ -827,7 +955,7 @@ export class VocationalModule {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const text = decodeURIComponent(btn.dataset.text);
-        speechService.speak({ text, rate: 0.95 });
+        speechController.speak({ text, rate: 0.95, intent: SpeakIntent.USER });
       });
     });
 
@@ -870,7 +998,7 @@ export class VocationalModule {
       micBtn.addEventListener('click', () => {
         const textSpan = micBtn.querySelector('span');
         if (this.isListening) {
-          speechService.stopListening();
+          speechController.stopListening();
           this.isListening = false;
           if (customInput && customInput.value.trim()) {
             this.activeSelectedPrompt = customInput.value.trim();
@@ -878,7 +1006,7 @@ export class VocationalModule {
           micBtn.classList.remove('recording', 'btn-danger', 'pulse');
           if (textSpan) textSpan.textContent = isDe ? 'Sprechen' : 'Speak';
         } else {
-          speechService.startListening({
+          speechController.listen({
             onInterim: ({ full }) => {
               if (customInput) customInput.value = full;
             },
@@ -924,7 +1052,7 @@ export class VocationalModule {
 
   processUserReply(userText) {
     if (this.isListening) {
-      speechService.stopListening();
+      speechController.stopListening();
       this.isListening = false;
       const micBtn = this.container.querySelector('#vocMicBtn');
       if (micBtn) {
@@ -937,9 +1065,13 @@ export class VocationalModule {
     const step = this.getCurrentStep();
     if (!step) return;
 
-    // Track word stats
+    // Track word stats.
+    // NOTE: this called storageService.incrementWordCount(), which has never
+    // existed on storageService - so every reply in this module threw a
+    // TypeError and the scenario could never advance. recordActivity() is the
+    // API the other six modules use, and it updates the streak too.
     const words = userText.split(/\s+/).filter(Boolean).length;
-    storageService.incrementWordCount(words);
+    storageService.recordActivity({ words, minutes: 1 });
 
     // Push user message to chat history with structured feedback
     this.chatHistory.push({
@@ -950,12 +1082,15 @@ export class VocationalModule {
       feedback: step.feedback
     });
 
-    audioRecorder.playChime('success');
+    audioEngine.playChime('success');
     this.activeSelectedPrompt = '';
     this.stepIdx++;
 
     const nextStep = this.getCurrentStep();
     if (nextStep) {
+      // One-shot authorisation tied to the turn the learner just submitted.
+      const turnId = speechController.openTurn();
+
       setTimeout(() => {
         this.chatHistory.push({
           sender: 'ai',
@@ -965,9 +1100,15 @@ export class VocationalModule {
         });
         this.render();
         this.bindEvents();
-        setTimeout(() => {
-          speechService.speak({ text: nextStep.aiSpeech, rate: 0.95 });
-        }, 300);
+        // The nested 300ms timeout is gone: speechController already defers
+        // its first utterance by a macrotask after cancel(), which is the
+        // real Android quirk the delay was blindly working around.
+        speechController.speak({
+          text: nextStep.aiSpeech,
+          rate: 0.95,
+          intent: SpeakIntent.TURN,
+          turnId
+        });
       }, 700);
     } else {
       // Completed scenario!
@@ -1027,7 +1168,7 @@ export class VocationalModule {
           lang: this.currentLang
         });
 
-        audioRecorder.playChime('chime');
+        audioEngine.playChime('success');
         btn.textContent = '✅ Gespeichert!';
         btn.style.borderColor = '#10b981';
         btn.style.color = '#34d399';
@@ -1065,7 +1206,7 @@ export class VocationalModule {
     if (runPolishBtn && textarea) {
       runPolishBtn.addEventListener('click', () => {
         if (this.isListening) {
-          speechService.stopListening();
+          speechController.stopListening();
           this.isListening = false;
           const polishMicBtn = this.container.querySelector('#vocPolishMicBtn');
           if (polishMicBtn) {
@@ -1085,7 +1226,7 @@ export class VocationalModule {
             diffNotes: ['Eigener Text übernommen - Struktur und Tonfall für den Berufsalltag validiert.'],
             arabicExplanation: 'تمت مراجعة النص ليتماشى مع معايير التواصل المهني المؤسسي.'
           };
-          audioRecorder.playChime('success');
+          audioEngine.playChime('success');
           card.innerHTML = this.renderActivePolishCard(preset);
           this.bindRoleplayEvents();
         }
@@ -1097,12 +1238,12 @@ export class VocationalModule {
     if (polishMicBtn && textarea) {
       polishMicBtn.addEventListener('click', () => {
         if (this.isListening) {
-          speechService.stopListening();
+          speechController.stopListening();
           this.isListening = false;
           polishMicBtn.classList.remove('btn-danger', 'pulse');
           polishMicBtn.innerHTML = '🎙️ Diktieren';
         } else {
-          speechService.startListening({
+          speechController.listen({
             onInterim: ({ full }) => {
               textarea.value = full;
             },
@@ -1152,10 +1293,10 @@ export class VocationalModule {
         if (this.selectedQuizOption === null || this.quizSubmitted) return;
         this.quizSubmitted = true;
         if (quiz && this.selectedQuizOption === quiz.correctIdx) {
-          audioRecorder.playChime('success');
+          audioEngine.playChime('success');
           confetti({ particleCount: 50, spread: 50, origin: { y: 0.6 } });
         } else {
-          audioRecorder.playChime('alert');
+          audioEngine.playChime('alert');
         }
 
         const viewport = this.container.querySelector('.voc-mode-viewport');

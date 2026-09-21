@@ -1,5 +1,5 @@
 // EchoSpeak PWA Service Worker
-const CACHE_NAME = 'echospeak-pwa-v3';
+const CACHE_NAME = 'echospeak-pwa-v4';
 
 const PRECACHE_ASSETS = [
   './',

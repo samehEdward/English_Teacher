@@ -1,8 +1,10 @@
 // Dictation & Articulation Studio Module
 import { DICTATION_LESSONS } from '../data/lessonsData.js';
 import { GERMAN_DICTATION_LESSONS } from '../data/lessonsData_de.js';
-import { speechService } from '../services/speechService.js';
-import { audioRecorder } from '../services/audioRecorder.js';
+import { speechController, SpeakIntent } from '../core/speechController.js';
+import { audioEngine } from '../core/audioEngine.js';
+import { actionBar } from '../ui/actionBar.js';
+import { statusStrip } from '../ui/statusStrip.js';
 import { DiffEngine } from '../services/diffEngine.js';
 import { storageService } from '../services/storageService.js';
 import confetti from 'canvas-confetti';
@@ -22,6 +24,88 @@ export class DictationModule {
 
   loadLessons() {
     this.lessons = this.currentLang === 'de' ? GERMAN_DICTATION_LESSONS : DICTATION_LESSONS;
+  }
+
+  // == module lifecycle ====================================================
+  // Minimal contract (ARCHITECTURE.md section 9). This module still renders
+  // its own inline control bar rather than publishing to the shared bottom
+  // bar, so it does not define publishActions() yet - see MIGRATION.md.
+
+  mount() {
+    this.render();
+    this.bindEvents();
+    this.publishActions();
+  }
+
+  unmount() {
+    // main.js already called speechController.reset(); clear the view-local
+    // mirror so a re-mount starts from a clean state.
+    this.isSpeakingVerification = false;
+    actionBar.setActions(null);
+  }
+
+  /**
+   * Bottom-bar controls.
+   *
+   * The two audio-player buttons stay in the content area: they sit inside a
+   * large purpose-built player card that is the focus of the exercise. The
+   * bar carries the writing actions plus sentence navigation, and the FAB
+   * drives the spoken-verification pass.
+   */
+  publishActions() {
+    const isDe = this.currentLang === 'de';
+    const atFirst = this.currentIndex === 0;
+    const atLast = this.currentIndex >= this.lessons.length - 1;
+
+    actionBar.setActions({
+      mic: {
+        onStart: () => this.toggleSpeakVerification(),
+        onStop: () => this.toggleSpeakVerification()
+      },
+      buttons: [
+        {
+          icon: 'prev',
+          label: isDe ? 'Zurück' : 'Prev',
+          disabled: atFirst,
+          onClick: () => this.goToSentence(this.currentIndex - 1)
+        },
+        {
+          icon: 'check',
+          label: isDe ? 'Prüfen' : 'Check',
+          ariaLabel: isDe ? 'Rechtschreibung prüfen' : 'Check writing',
+          onClick: () => this.checkWriting()
+        },
+        {
+          icon: 'hint',
+          label: isDe ? 'Lösung' : 'Solution',
+          onClick: () => this.revealSolution()
+        },
+        {
+          icon: 'next',
+          label: isDe ? 'Weiter' : 'Next',
+          disabled: atLast,
+          onClick: () => this.goToSentence(this.currentIndex + 1)
+        }
+      ]
+    });
+  }
+
+  /** Single navigation path, so the bar's disabled states stay truthful. */
+  goToSentence(index) {
+    if (index < 0 || index >= this.lessons.length) return;
+    // Changing sentence is a boundary: whatever is playing must stop.
+    speechController.reset('dictation-navigate');
+    this.currentIndex = index;
+    this.render();
+    this.bindEvents();
+    this.publishActions();
+  }
+
+  revealSolution() {
+    const textarea = this.container.querySelector('#dictationTextarea');
+    if (!textarea) return;
+    textarea.value = this.getCurrent().sentence;
+    this.checkWriting();
   }
 
   setLanguage(lang) {
@@ -87,7 +171,7 @@ export class DictationModule {
           <!-- User Writing Input Area -->
           <div class="form-group">
             <label style="font-size: 14px; font-weight: 600; color: #cbd5e1;">${isDe ? 'Tippen Sie, was Sie hören:' : 'Type what you hear:'}</label>
-            <textarea id="dictationTextarea" class="dictation-input" placeholder="${isDe ? 'Tippen Sie den deutschen Satz, den Sie gehört haben... (Enter drücken)' : 'Type the English sentence you heard... (Press Enter or click Check Writing)'}" rows="3" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off"></textarea>
+            <textarea id="dictationTextarea" class="dictation-input" placeholder="${isDe ? 'Tippen Sie den deutschen Satz, den Sie gehört haben... (Enter drücken)' : 'Type the English sentence you heard... (Press Enter or click Check Writing)'}" rows="3" enterkeyhint="done" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off"></textarea>
           </div>
 
           <!-- Action Controls -->
@@ -181,24 +265,15 @@ export class DictationModule {
     });
 
     this.container.querySelector('#revealAnswerBtn').addEventListener('click', () => {
-      textarea.value = this.getCurrent().sentence;
-      this.checkWriting();
+      this.revealSolution();
     });
 
     this.container.querySelector('#prevDictBtn').addEventListener('click', () => {
-      if (this.currentIndex > 0) {
-        this.currentIndex--;
-        this.render();
-        this.bindEvents();
-      }
+      this.goToSentence(this.currentIndex - 1);
     });
 
     this.container.querySelector('#nextDictBtn').addEventListener('click', () => {
-      if (this.currentIndex < this.lessons.length - 1) {
-        this.currentIndex++;
-        this.render();
-        this.bindEvents();
-      }
+      this.goToSentence(this.currentIndex + 1);
     });
 
     this.container.querySelector('#speakVerifyBtn').addEventListener('click', () => {
@@ -207,9 +282,10 @@ export class DictationModule {
   }
 
   playSentence(rate = 1.0) {
-    speechService.speak({
+    speechController.speak({
       text: this.getCurrent().sentence,
-      rate
+      rate,
+      intent: SpeakIntent.USER
     });
   }
 
@@ -253,10 +329,10 @@ export class DictationModule {
     `;
 
     if (result.isExact || result.accuracy >= 90) {
-      audioRecorder.playChime('success');
+      audioEngine.playChime('success');
       confetti({ particleCount: 60, spread: 50, origin: { y: 0.6 } });
     } else {
-      audioRecorder.playChime('tap');
+      audioEngine.playChime('tap');
     }
 
     storageService.recordActivity({
@@ -277,7 +353,7 @@ export class DictationModule {
       this.isSpeakingVerification = false;
       btn.classList.remove('recording');
       btnText.textContent = isDe ? 'Sprechen' : 'Speak';
-      speechService.stopListening();
+      speechController.stopListening();
       return;
     }
 
@@ -287,8 +363,8 @@ export class DictationModule {
     feedbackBox.style.display = 'none';
 
     let captured = '';
-    speechService.startListening({
-      lang: speechService.getDefaultRecognitionLang(),
+    speechController.listen({
+      lang: speechController.recognitionLang(),
       continuous: true,
       interimResults: true,
       onInterim: ({ full }) => {
@@ -310,10 +386,21 @@ export class DictationModule {
         spokenEl.textContent = `${isDe ? 'Gesprochen' : 'Spoken'}: "${spoken}"`;
 
         if (evalResult.accuracy >= 85) {
-          audioRecorder.playChime('success');
+          audioEngine.playChime('success');
         }
+      
+        // Release the state machine: without this the FSM parks in
+        // PROCESSING and the status strip never clears.
+        speechController.finishProcessing();
       },
-      onError: () => {
+      onError: (err) => {
+        // no-speech is routine hesitation, not a failure worth resetting for.
+        if (err && err.error === 'no-speech') return;
+        if (err && err.permission) {
+          statusStrip.showPermission(err.permission, {
+            onRetry: () => this.toggleSpeakVerification()
+          });
+        }
         this.isSpeakingVerification = false;
         btn.classList.remove('recording');
         btnText.textContent = isDe ? 'Jetzt laut sprechen' : 'Speak Aloud Now';

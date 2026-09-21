@@ -1,205 +1,209 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>EchoSpeak — Local English Fluency Studio</title>
-    <meta name="description" content="A 100% local, browser-based English learning studio to improve speaking skills through reading, writing, shadowing, and listening." />
+    <!-- viewport-fit=cover is what makes env(safe-area-inset-*) resolve to real
+         values on notched Android devices and iOS. Without it the bottom bar
+         sits under the gesture pill. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0" />
+    <title>EchoSpeak — Vocational Speaking Studio</title>
+    <meta name="description" content="Offline-first spoken language training for Hospital/Enterprise IT Support and Medical & Chemical Laboratory workplaces, in German and English." />
+
     <link rel="icon" type="image/svg+xml" href="./icons/icon-192.svg" />
     <link rel="manifest" href="./manifest.json" />
-    <meta name="theme-color" content="#0f172a" />
+    <meta name="theme-color" content="#0b1120" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="EchoSpeak" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <link rel="apple-touch-icon" href="./icons/icon-192.png" />
-    <link rel="stylesheet" href="./src/styles/main.css" />
+
+    <!-- Order matters: tokens define the variables the other two consume.
+         legacy-modules.css is the trimmed remainder of the old main.css and
+         is retired module by module. -->
+    <link rel="stylesheet" href="./src/styles/tokens.css" />
+    <link rel="stylesheet" href="./src/styles/shell.css" />
+    <link rel="stylesheet" href="./src/styles/components.css" />
+    <link rel="stylesheet" href="./src/styles/legacy-modules.css" />
   </head>
   <body>
-    <div class="app-container">
-      <!-- Top Application Header -->
-      <header class="top-header glass-panel">
-        <div class="brand-section">
-          <div class="brand-icon-wrapper">
+    <div class="app-shell">
+      <!-- ============ header ============ -->
+      <header class="app-header">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
               <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
               <line x1="12" y1="19" x2="12" y2="22"></line>
             </svg>
           </div>
-          <div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <h1 class="brand-title">EchoSpeak</h1>
-              <span class="brand-badge">Fluency Studio</span>
-            </div>
-            <p id="brandSubtitle" style="font-size: 12px; color: var(--text-dim); margin-top: -2px;">Master Spoken Fluency • 100% Browser Native</p>
+          <div class="brand-text">
+            <h1 class="brand-name">EchoSpeak</h1>
+            <p class="brand-sub" id="brandSubtitle">Vocational Speaking Studio</p>
           </div>
         </div>
 
-        <div class="header-controls">
-          <!-- Language Mode Switcher -->
-          <div class="lang-switcher" id="langSwitcher" title="Switch Target Learning Language">
-            <button class="lang-btn active" data-lang="en" id="btnLangEn" aria-label="Learn English">
-              <span class="lang-flag">🇬🇧</span>
-              <span>English</span>
-            </button>
-            <button class="lang-btn" data-lang="de" id="btnLangDe" aria-label="Deutsch lernen">
-              <span class="lang-flag">🇩🇪</span>
-              <span>Deutsch</span>
-            </button>
+        <div class="header-actions">
+          <div class="lang-toggle" role="group" aria-label="Target language">
+            <button type="button" id="btnLangDe" data-lang="de" aria-pressed="true">DE</button>
+            <button type="button" id="btnLangEn" data-lang="en" aria-pressed="false">EN</button>
           </div>
 
-          <!-- Dynamic Streak & Words Chips -->
-          <div class="stat-chip streak-active" id="headerStreakChip" title="Active practice streak">
-            <span class="stat-icon">🔥</span>
-            <span id="headerStreakVal">1 Day Streak</span>
-          </div>
-
-          <div class="stat-chip" id="headerWordsChip" title="Total words spoken">
-            <span class="stat-icon">🗣️</span>
-            <span id="headerWordsVal">0 Spoken</span>
-          </div>
-
-          <!-- Native Voice Accent Picker -->
-          <div class="voice-picker-group" title="Select browser synthesized voice">
-            <label for="globalVoiceSelect" id="voiceSelectLabel">Voice:</label>
-            <select id="globalVoiceSelect" class="voice-select">
-              <option value="">Default Voice</option>
-            </select>
-          </div>
-
-          <!-- Smartphone App / PWA Install Button -->
-          <button class="btn btn-secondary btn-sm" id="headerInstallBtn" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: var(--radius-full); border-color: rgba(99, 102, 241, 0.45); color: #c7d2fe; background: rgba(99, 102, 241, 0.12);" title="Auf Smartphone installieren / Open on Phone">
-            <span style="font-size: 15px;">📲</span>
-            <span id="headerInstallText">App am Handy</span>
+          <button type="button" class="icon-btn" id="btnSettings" aria-label="Settings" aria-expanded="false" aria-haspopup="dialog">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
           </button>
         </div>
       </header>
 
-      <!-- Navigation Tabs Bar -->
-      <nav class="nav-tabs glass-panel" id="mainNavTabs" aria-label="Learning Pillars">
-        <button class="tab-btn active" data-target="readModule" id="navTabRead">
-          <span class="tab-label">📖 Read & Speak</span>
-          <span class="tab-badge">Core</span>
+      <!-- ============ nav rail ============
+           Horizontally scrolling chips. Not fixed, not at the bottom: the
+           bottom belongs to the active module's controls. -->
+      <nav class="nav-rail" id="navRail" role="tablist" aria-label="Training modules">
+        <button type="button" class="nav-chip" role="tab" data-target="vocationalModule" aria-selected="true">
+          <span class="chip-icon" aria-hidden="true">💼</span><span class="chip-label">Beruf</span>
         </button>
-        <button class="tab-btn" data-target="shadowModule" id="navTabShadow">
-          <span class="tab-label">🎧 Shadowing Lab</span>
-          <span class="tab-badge">Echo</span>
+        <button type="button" class="nav-chip" role="tab" data-target="roleplayModule" aria-selected="false">
+          <span class="chip-icon" aria-hidden="true">💬</span><span class="chip-label">Dialog</span>
         </button>
-        <button class="tab-btn" data-target="dictModule" id="navTabDict">
-          <span class="tab-label">✍️ Dictation Studio</span>
+        <button type="button" class="nav-chip" role="tab" data-target="readModule" aria-selected="false">
+          <span class="chip-icon" aria-hidden="true">📖</span><span class="chip-label">Lesen</span>
         </button>
-        <button class="tab-btn" data-target="roleplayModule" id="navTabRoleplay">
-          <span class="tab-label">💬 Roleplay & Dialogue</span>
+        <button type="button" class="nav-chip" role="tab" data-target="shadowModule" aria-selected="false">
+          <span class="chip-icon" aria-hidden="true">🎧</span><span class="chip-label">Echo</span>
         </button>
-        <button class="tab-btn" data-target="phoneticsModule" id="navTabPhonetics">
-          <span class="tab-label">🎯 Phonetics Gym</span>
+        <button type="button" class="nav-chip" role="tab" data-target="dictModule" aria-selected="false">
+          <span class="chip-icon" aria-hidden="true">✍️</span><span class="chip-label">Diktat</span>
         </button>
-        <button class="tab-btn" data-target="vocationalModule" id="navTabVocational">
-          <span class="tab-label">💼 Career Pro Studio</span>
-          <span class="tab-badge" style="background: rgba(99, 102, 241, 0.25); color: #a5b4fc; border-color: rgba(99, 102, 241, 0.5);">IT & Lab</span>
+        <button type="button" class="nav-chip" role="tab" data-target="phoneticsModule" aria-selected="false">
+          <span class="chip-icon" aria-hidden="true">🎯</span><span class="chip-label">Phonetik</span>
         </button>
-        <button class="tab-btn" data-target="vaultModule" id="navTabVault">
-          <span class="tab-label">📚 Vault & Stats</span>
+        <button type="button" class="nav-chip" role="tab" data-target="vaultModule" aria-selected="false">
+          <span class="chip-icon" aria-hidden="true">📚</span><span class="chip-label">Vokabeln</span>
         </button>
       </nav>
 
-      <!-- Dynamic Learning Modules Viewports -->
-      <main>
-        <section id="readModule" class="module-view active" aria-labelledby="read-aloud-title"></section>
-        <section id="shadowModule" class="module-view" aria-labelledby="shadowing-title"></section>
-        <section id="dictModule" class="module-view" aria-labelledby="dictation-title"></section>
-        <section id="roleplayModule" class="module-view" aria-labelledby="roleplay-title"></section>
-        <section id="phoneticsModule" class="module-view" aria-labelledby="phonetics-title"></section>
-        <section id="vocationalModule" class="module-view" aria-labelledby="vocational-title"></section>
-        <section id="vaultModule" class="module-view" aria-labelledby="vault-title"></section>
+      <!-- ============ viewport (the only scroll container) ============ -->
+      <main class="app-viewport" id="appViewport">
+        <div id="capabilityNotice" aria-live="polite"></div>
+
+        <section id="vocationalModule" class="module-view active" role="tabpanel" tabindex="-1"></section>
+        <section id="roleplayModule"   class="module-view" role="tabpanel" tabindex="-1"></section>
+        <section id="readModule"       class="module-view" role="tabpanel" tabindex="-1"></section>
+        <section id="shadowModule"     class="module-view" role="tabpanel" tabindex="-1"></section>
+        <section id="dictModule"       class="module-view" role="tabpanel" tabindex="-1"></section>
+        <section id="phoneticsModule"  class="module-view" role="tabpanel" tabindex="-1"></section>
+        <section id="vaultModule"      class="module-view" role="tabpanel" tabindex="-1"></section>
       </main>
     </div>
 
-    <!-- Modal: Custom Reading Text Importer -->
-    <div id="customTextModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <div class="modal-content glass-panel">
-        <div class="modal-header">
-          <h3 id="modalTitle" style="font-size: 18px; font-weight: 700; color: #fff;">Import Your Custom Text</h3>
-          <button id="closeModalBtn" class="modal-close-btn" aria-label="Close dialog">&times;</button>
+    <!-- ============ status strip ============
+         Single place where mic state, permission problems and errors surface.
+         Never a permanent red banner: it is dismissed as soon as state
+         recovers. -->
+    <div class="status-strip" id="statusStrip" role="status" aria-live="polite">
+      <span class="status-icon" id="statusIcon" aria-hidden="true"></span>
+      <span class="status-text" id="statusText"></span>
+      <button type="button" class="status-action hidden" id="statusAction"></button>
+    </div>
+
+    <!-- ============ bottom action bar ============
+         The ONLY position:fixed element. Slots are filled by the active
+         module through ui/actionBar.js; the FAB is owned by the speech state
+         machine and is never driven by module-local flags. -->
+    <div class="action-bar" id="actionBar" role="toolbar" aria-label="Practice controls">
+      <button type="button" class="bar-btn" data-slot="0" hidden></button>
+      <button type="button" class="bar-btn" data-slot="1" hidden></button>
+
+      <button type="button" class="fab-mic" id="fabMic" data-state="IDLE" aria-label="Start speaking">
+        <svg class="fab-icon-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+          <line x1="12" y1="19" x2="12" y2="22"></line>
+        </svg>
+        <svg class="fab-icon-stop hidden" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+          <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+        </svg>
+      </button>
+
+      <button type="button" class="bar-btn" data-slot="2" hidden></button>
+      <button type="button" class="bar-btn" data-slot="3" hidden></button>
+    </div>
+
+    <!-- ============ settings sheet ============ -->
+    <div class="modal" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="modal-panel">
+        <div class="modal-head">
+          <h3 id="settingsTitle">Einstellungen</h3>
+          <button type="button" class="modal-close" id="closeSettingsBtn" aria-label="Close">&times;</button>
         </div>
-        <p id="modalDesc" style="font-size: 13px; color: var(--text-muted);">
-          Paste any news article, email, book excerpt, or speech. EchoSpeak will automatically enable word-by-word reading, audio pronunciation, and speech assessment.
-        </p>
+
         <div class="form-group">
-          <label for="customTextTitleInput" id="modalTitleLabel" style="font-size: 13px; font-weight: 600; color: #cbd5e1;">Article Title:</label>
-          <input type="text" id="customTextTitleInput" class="form-input" placeholder="e.g. Technology News / My Presentation" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off" />
+          <label class="form-label" for="voiceSelect" id="voiceSelectLabel">Stimme</label>
+          <select id="voiceSelect" class="form-select"></select>
         </div>
-        <div class="form-group">
-          <label for="customTextareaInput" id="modalTextLabel" style="font-size: 13px; font-weight: 600; color: #cbd5e1;">Text (Paragraph):</label>
-          <textarea id="customTextareaInput" class="form-textarea" placeholder="Paste your paragraph here..." spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off"></textarea>
+
+        <div class="card" style="margin-bottom: var(--sp-3);">
+          <div class="row">
+            <span style="font-size: var(--fs-sm); font-weight: 600;">🔥 <span id="statStreak">0</span></span>
+            <span class="spacer"></span>
+            <span style="font-size: var(--fs-sm); font-weight: 600;">🗣️ <span id="statWords">0</span></span>
+          </div>
         </div>
-        <div style="display: flex; justify-content: flex-end; gap: 12px;">
-          <button id="cancelModalBtn" class="btn btn-secondary">Cancel</button>
-          <button id="saveCustomTextBtn" class="btn btn-primary">Save & Start Reading</button>
+
+        <div id="diagnostics" class="card" style="font-size: var(--fs-xs); color: var(--text-dim); font-family: var(--font-mono);"></div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="importTextBtn">Text importieren</button>
+          <button type="button" class="btn btn-primary" id="closeSettingsBtn2">Fertig</button>
         </div>
       </div>
     </div>
 
-    <!-- Modal: Smartphone PWA Install & QR Code Scanner -->
-    <div id="mobileAppModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mobileModalTitle">
-      <div class="modal-content glass-panel" style="max-width: 500px; text-align: center;">
-        <div class="modal-header" style="justify-content: space-between; display: flex; align-items: center; border-bottom: 1px solid var(--border-glass); padding-bottom: 12px; margin-bottom: 16px;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 24px;">📱</span>
-            <h3 id="mobileModalTitle" style="font-size: 18px; font-weight: 700; color: #fff;">Auf Smartphone installieren</h3>
-          </div>
-          <button id="closeMobileModalBtn" class="modal-close-btn" aria-label="Close dialog">&times;</button>
+    <!-- ============ custom text import ============ -->
+    <div class="modal" id="customTextModal" role="dialog" aria-modal="true" aria-labelledby="customTextTitle">
+      <div class="modal-panel">
+        <div class="modal-head">
+          <h3 id="customTextTitle">Eigenen Text importieren</h3>
+          <button type="button" class="modal-close" id="closeCustomTextBtn" aria-label="Close">&times;</button>
         </div>
 
-        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
-          Scannen Sie diesen QR-Code mit der <strong>Kamera Ihres Smartphones</strong> (WLAN muss verbunden sein) oder öffnen Sie den Link direkt im Handy-Browser:
-        </p>
-
-        <!-- Connection Mode Toggle -->
-        <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 14px;">
-          <button class="btn btn-sm btn-secondary active" id="btnSelectHttps" style="font-size: 11px; padding: 6px 12px; border-radius: var(--radius-full);">
-            🌐 HTTPS Link (Empfohlen)
-          </button>
-          <button class="btn btn-sm btn-secondary" id="btnSelectLocal" style="font-size: 11px; padding: 6px 12px; border-radius: var(--radius-full);">
-            🏠 Lokales WLAN (IP)
-          </button>
+        <div class="form-group">
+          <label class="form-label" for="customTextTitleInput">Titel</label>
+          <input
+            type="text"
+            id="customTextTitleInput"
+            class="form-input"
+            placeholder="z.B. Schichtübergabe Labor"
+            spellcheck="false"
+            autocorrect="off"
+            autocapitalize="none"
+            autocomplete="off"
+            enterkeyhint="next"
+          />
         </div>
 
-        <!-- QR Code Display Box -->
-        <div style="background: #0f172a; padding: 14px; border-radius: 16px; display: inline-block; border: 2px solid rgba(99, 102, 241, 0.4); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); margin-bottom: 12px;">
-          <img id="mobileQrCodeImg" src="" alt="Scan QR Code to open on smartphone" width="200" height="200" style="display: block; border-radius: 8px;" />
+        <div class="form-group">
+          <label class="form-label" for="customTextareaInput">Text</label>
+          <textarea
+            id="customTextareaInput"
+            class="form-textarea"
+            rows="6"
+            placeholder="Text hier einfügen…"
+            spellcheck="false"
+            autocorrect="off"
+            autocapitalize="none"
+            autocomplete="off"
+            enterkeyhint="done"
+          ></textarea>
         </div>
 
-        <!-- Direct Link Box with Copy Button -->
-        <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border-glass); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; gap: 8px;">
-          <span id="mobileAppUrlDisplay" style="font-family: monospace; font-size: 13px; color: #38bdf8; word-break: break-all;">https://ten-paths-travel.loca.lt</span>
-          <button id="copyPhoneUrlBtn" class="btn btn-secondary btn-sm" style="padding: 4px 10px; font-size: 12px;">Kopieren</button>
-        </div>
-
-        <!-- Tunnel Password Hint -->
-        <div id="mobileTunnelPwdBadge" style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; font-size: 12px; color: #fde68a; text-align: left;">
-          🔑 <strong>Passwort-Hinweis:</strong> Falls der Browser beim ersten Öffnen nach einem <em>„Tunnel Password“</em> fragt, geben Sie einfach: <code style="background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 4px; font-weight: 700; color: #fff;">84.115.226.225</code> ein und tippen Sie auf <strong>Click to Submit</strong>.
-        </div>
-
-        <!-- 3-Step Install Guide -->
-        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-glass); border-radius: 12px; padding: 14px; text-align: left; font-size: 12px; color: #cbd5e1; display: flex; flex-direction: column; gap: 10px;">
-          <div style="font-weight: 700; color: #fff; font-size: 13px; display: flex; align-items: center; gap: 6px;">
-            <span>⚡</span>
-            <span>So installieren Sie die App am Smartphone:</span>
-          </div>
-
-          <div>
-            <strong style="color: #34d399;">🤖 Android (Chrome / Edge / Samsung):</strong><br />
-            1. QR-Code scannen &amp; Seite öffnen.<br />
-            2. Tippen Sie auf <strong>„App installieren“</strong> oder im Menü (⋮) auf <strong>„Zum Startbildschirm hinzufügen“</strong>.
-          </div>
-
-          <div>
-            <strong style="color: #60a5fa;">🍎 iPhone / iPad (Safari):</strong><br />
-            1. QR-Code mit der Kamera scannen und in Safari öffnen.<br />
-            2. Unten auf den <strong>Teilen-Button</strong> (Viereck mit Pfeil ⎋) tippen.<br />
-            3. Scrollen und <strong>„Zum Home-Bildschirm“</strong> (+ Add to Home Screen) wählen.
-          </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="cancelCustomTextBtn">Abbrechen</button>
+          <button type="button" class="btn btn-primary" id="saveCustomTextBtn">Speichern</button>
         </div>
       </div>
     </div>

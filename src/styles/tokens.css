@@ -1,0 +1,121 @@
+/* EchoSpeak v2 — design tokens
+   Mobile-first. Every value below is the phone value; desktop overrides live
+   in shell.css behind min-width queries, never the other way round. */
+
+:root {
+  /* -- surfaces ---------------------------------------------------------- */
+  --bg-app:        #0b1120;
+  --bg-raised:     #111a2e;
+  --bg-card:       rgba(255, 255, 255, 0.045);
+  --bg-card-solid: #16203a;
+  --bg-sunken:     rgba(0, 0, 0, 0.28);
+  --bg-scrim:      rgba(3, 7, 18, 0.72);
+
+  /* -- borders ----------------------------------------------------------- */
+  --border:        rgba(148, 163, 184, 0.16);
+  --border-strong: rgba(148, 163, 184, 0.30);
+  --border-accent: rgba(99, 102, 241, 0.45);
+
+  /* -- text -------------------------------------------------------------- */
+  --text:      #f1f5f9;
+  --text-muted:#cbd5e1;
+  --text-dim:  #94a3b8;
+  --text-faint:#64748b;
+
+  /* -- brand ------------------------------------------------------------- */
+  --accent:        #6366f1;
+  --accent-bright: #818cf8;
+  --accent-soft:   rgba(99, 102, 241, 0.14);
+  --cyan:          #06b6d4;
+  --pink:          #ec4899;
+
+  /* -- semantic ---------------------------------------------------------- */
+  --success:      #10b981;
+  --success-soft: rgba(16, 185, 129, 0.14);
+  --warn:         #f59e0b;
+  --warn-soft:    rgba(245, 158, 11, 0.14);
+  --danger:       #ef4444;
+  --danger-soft:  rgba(239, 68, 68, 0.14);
+  --info:         #38bdf8;
+
+  /* -- mic states (driven by the speech state machine) ------------------- */
+  --mic-idle:      var(--accent);
+  --mic-listening: #ef4444;
+  --mic-speaking:  var(--cyan);
+  --mic-disabled:  #475569;
+
+  /* -- radii ------------------------------------------------------------- */
+  --r-sm:   8px;
+  --r-md:   12px;
+  --r-lg:   18px;
+  --r-xl:   24px;
+  --r-full: 999px;
+
+  /* -- type scale (phone) ------------------------------------------------ */
+  --fs-xs: 11px;
+  --fs-sm: 13px;
+  --fs-md: 15px;
+  --fs-lg: 18px;
+  --fs-xl: 22px;
+
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, monospace;
+
+  /* -- spacing ----------------------------------------------------------- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+
+  /* -- shell geometry ---------------------------------------------------- */
+  --header-h:     52px;
+  --nav-h:        46px;
+  --bottom-bar-h: 72px;
+  --fab-size:     64px;
+  --tap-min:      48px;   /* never ship a tap target smaller than this */
+
+  /* Safe areas. env() resolves to 0px where unsupported, so the max() keeps
+     a sane floor on devices without a notch or gesture bar. */
+  --safe-top:    env(safe-area-inset-top, 0px);
+  --safe-bottom: max(env(safe-area-inset-bottom, 0px), 12px);
+  --safe-left:   env(safe-area-inset-left, 0px);
+  --safe-right:  env(safe-area-inset-right, 0px);
+
+  /* Total space the fixed bottom bar occupies, including the safe area. */
+  --bottom-reserve: calc(var(--bottom-bar-h) + var(--safe-bottom));
+
+  /* -- elevation --------------------------------------------------------- */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.40);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.50);
+  --shadow-fab: 0 6px 20px rgba(99, 102, 241, 0.45);
+
+  /* -- motion ------------------------------------------------------------ */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 120ms;
+  --dur:      200ms;
+}
+
+/* Larger type and roomier chrome once there is room for it. */
+@media (min-width: 768px) {
+  :root {
+    --fs-sm: 14px;
+    --fs-md: 16px;
+    --fs-lg: 20px;
+    --fs-xl: 26px;
+    --header-h: 60px;
+    --nav-h: 52px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-fast: 0ms; --dur: 0ms; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

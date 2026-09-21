@@ -2,8 +2,10 @@
 import { READING_LESSONS } from '../data/lessonsData.js';
 import { GERMAN_READING_LESSONS } from '../data/lessonsData_de.js';
 import { I18N } from '../data/i18n.js';
-import { speechService } from '../services/speechService.js';
-import { audioRecorder } from '../services/audioRecorder.js';
+import { speechController, SpeakIntent } from '../core/speechController.js';
+import { audioEngine } from '../core/audioEngine.js';
+import { actionBar } from '../ui/actionBar.js';
+import { statusStrip } from '../ui/statusStrip.js';
 import { DiffEngine } from '../services/diffEngine.js';
 import { storageService } from '../services/storageService.js';
 import confetti from 'canvas-confetti';
@@ -37,6 +39,66 @@ export class ReadAloudModule {
     this.spokenTranscript = '';
     this.render();
     this.bindEvents();
+  }
+
+  // == module lifecycle ====================================================
+  // Minimal contract (ARCHITECTURE.md section 9). This module still renders
+  // its own inline control bar rather than publishing to the shared bottom
+  // bar, so it does not define publishActions() yet - see MIGRATION.md.
+
+  mount() {
+    this.render();
+    this.bindEvents();
+    this.publishActions();
+  }
+
+  unmount() {
+    // main.js already called speechController.reset(); clear the view-local
+    // mirrors so a re-mount starts from a clean state.
+    this.isRecording = false;
+    this.pendingStopEval = false;
+    actionBar.setActions(null);
+  }
+
+  /**
+   * Bottom-bar controls. The inline .control-bar this module still renders is
+   * hidden by legacy-modules.css - these are the same actions moved into the
+   * thumb zone, with the mic promoted to the shared FAB.
+   */
+  publishActions() {
+    const isDe = this.currentLang === 'de';
+
+    actionBar.setActions({
+      mic: {
+        onStart: () => this.toggleSpeaking(),
+        // toggleSpeaking() does the stop-side work too (flushes the interim
+        // transcript and scores it), which is why the FAB delegates here
+        // rather than calling stopListening() directly.
+        onStop: () => this.toggleSpeaking()
+      },
+      buttons: [
+        {
+          icon: 'volume',
+          label: isDe ? 'Hören' : 'Listen',
+          ariaLabel: isDe ? 'Text vorlesen lassen' : 'Hear the text read aloud',
+          onClick: () => this.toggleListenCoach()
+        },
+        {
+          icon: 'reset',
+          label: isDe ? 'Neu' : 'Reset',
+          onClick: () => this.resetHighlights()
+        },
+        {
+          icon: 'book',
+          label: 'Import',
+          ariaLabel: isDe ? 'Eigenen Text importieren' : 'Import your own text',
+          onClick: () => {
+            const modal = document.querySelector('#customTextModal');
+            if (modal) modal.classList.add('open');
+          }
+        }
+      ]
+    });
   }
 
   refreshCustomLessons() {
@@ -242,8 +304,8 @@ export class ReadAloudModule {
   }
 
   switchLesson(lessonId) {
-    speechService.stopSpeaking();
-    speechService.stopListening();
+    speechController.stopSpeaking();
+    speechController.stopListening();
     const found = this.lessons.find(l => l.id === lessonId);
     if (!found) return;
 
@@ -258,7 +320,7 @@ export class ReadAloudModule {
   }
 
   resetHighlights() {
-    speechService.stopSpeaking();
+    speechController.stopSpeaking();
     const isDe = this.currentLang === 'de';
     const tokens = this.container.querySelectorAll('.word-token');
     tokens.forEach(t => {
@@ -280,8 +342,8 @@ export class ReadAloudModule {
     const isDe = this.currentLang === 'de';
     const btnText = this.container.querySelector('#listenCoachBtnText');
 
-    if (speechService.isSpeaking()) {
-      speechService.stopSpeaking();
+    if (speechController.isSpeaking()) {
+      speechController.stopSpeaking();
       btnText.textContent = isDe ? 'Coach anhören' : 'Listen to Coach';
       this.container.querySelectorAll('.word-token').forEach(t => t.classList.remove('speaking-active'));
       return;
@@ -293,9 +355,10 @@ export class ReadAloudModule {
     const tokens = Array.from(this.container.querySelectorAll('.word-token'));
     let currentIdx = 0;
 
-    speechService.speak({
+    speechController.speak({
       text: this.currentLesson.text,
       rate: this.speechRate,
+      intent: SpeakIntent.USER,
       onBoundary: (event) => {
         if (event.name === 'word') {
           tokens.forEach(t => t.classList.remove('speaking-active'));
@@ -389,7 +452,7 @@ export class ReadAloudModule {
       this.stopVisualizer(canvas);
 
       const captured = (this.spokenTranscript || '').trim();
-      speechService.stopListening();
+      speechController.stopListening();
 
       if (captured.length > 0) {
         this.finishEvaluation(captured);
@@ -401,7 +464,7 @@ export class ReadAloudModule {
     }
 
     // Start speaking
-    speechService.stopSpeaking();
+    speechController.stopSpeaking();
     this.resetHighlights();
     this.hasEvaluated = false;
     this.isRecording = true;
@@ -414,8 +477,8 @@ export class ReadAloudModule {
     this.startVisualizer(canvas);
     this.pendingStopEval = false;
 
-    speechService.startListening({
-      lang: speechService.getDefaultRecognitionLang(),
+    speechController.listen({
+      lang: speechController.recognitionLang(),
       continuous: true,
       interimResults: true,
       onInterim: ({ full }) => {
@@ -428,14 +491,19 @@ export class ReadAloudModule {
         if (fullSpoken.length > 0) {
           this.finishEvaluation(fullSpoken);
         }
+      
+        // Release the state machine: without this the FSM parks in
+        // PROCESSING and the status strip never clears.
+        speechController.finishProcessing();
       },
       onError: (err) => {
         console.warn('Speech recognition error:', err);
         const errType = err && (err.error || err.message);
-        if (errType === 'not-allowed' || errType === 'service-not-allowed') {
-          alert(isDe 
-            ? 'Mikrofonzugriff ist erforderlich, um Ihre Sprache zu analysieren. Bitte erlauben Sie den Zugriff im Browser.' 
-            : 'Microphone access is required to analyze speaking. Please allow mic permission in your browser.');
+        if (err && err.permission) {
+          // Actionable, dismissible, and offers the settings route on Android
+          // - unlike the v1 alert(), which blocked the UI thread and told the
+          // user nothing they could act on.
+          statusStrip.showPermission(err.permission, { onRetry: () => this.toggleSpeaking() });
         }
         if (errType === 'no-speech') {
           return;
@@ -519,14 +587,14 @@ export class ReadAloudModule {
 
     // Confetti on outstanding performance
     if (result.accuracy >= 85) {
-      audioRecorder.playChime('success');
+      audioEngine.playChime('success');
       confetti({
         particleCount: 80,
         spread: 60,
         origin: { y: 0.6 }
       });
     } else {
-      audioRecorder.playChime('tap');
+      audioEngine.playChime('tap');
     }
   }
 
@@ -615,7 +683,7 @@ export class ReadAloudModule {
     `;
 
     inspector.querySelector('#inspectAudioBtn').addEventListener('click', () => {
-      speechService.speak({ text: word, rate: 0.85 });
+      speechController.speak({ text: word, rate: 0.85, intent: SpeakIntent.USER });
     });
 
     const saveBtn = inspector.querySelector('#saveWordVaultBtn');
@@ -628,10 +696,10 @@ export class ReadAloudModule {
       });
       saveBtn.textContent = isDe ? '✓ Im Tresor gespeichert' : '✓ Saved in Vault';
       saveBtn.classList.replace('btn-primary', 'btn-secondary');
-      audioRecorder.playChime('tap');
+      audioEngine.playChime('tap');
     });
 
     // Also speak word immediately on click
-    speechService.speak({ text: word, rate: 0.9 });
+    speechController.speak({ text: word, rate: 0.9, intent: SpeakIntent.USER });
   }
 }

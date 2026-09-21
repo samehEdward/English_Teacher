@@ -17,7 +17,7 @@ class StorageService {
   initDefaults() {
     if (!localStorage.getItem(STORAGE_KEYS.SETTINGS)) {
       this.saveSettings({
-        language: 'en',
+        language: 'de',
         preferredVoice: '',
         speechRate: 1.0,
         pitch: 1.0,
@@ -164,7 +164,9 @@ class StorageService {
   // Settings
   getSettings() {
     const raw = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-    const defaults = { language: 'en', speechRate: 1.0, pitch: 1.0, preferredVoice: '', soundEffects: true };
+    // German is the default target language: the vocational tracks are built
+    // around formal German workplace register (Siezen). English is secondary.
+    const defaults = { language: 'de', speechRate: 1.0, pitch: 1.0, preferredVoice: '', soundEffects: true };
     return raw ? { ...defaults, ...JSON.parse(raw) } : defaults;
   }
 
