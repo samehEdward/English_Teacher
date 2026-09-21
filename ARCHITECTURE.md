@@ -11,10 +11,13 @@ Both were verified against this repository, not assumed.
 
 ### Fact 1 — There is no SpeechRecognition in the Android APK
 
-`android/app/src/main/assets/capacitor.plugins.json` is `[]`, and no speech plugin exists in
-`node_modules`. The Capacitor shell runs in **Android System WebView**, which does **not**
-implement `webkitSpeechRecognition` — that API is a Chrome-branded feature backed by Google's
-servers, not part of the WebView platform surface.
+*(Resolved — see the note at the end of this section. The reasoning is kept because it is why
+the adapter layer exists.)*
+
+At the time of the rebuild, `android/app/src/main/assets/capacitor.plugins.json` was `[]` and no
+speech plugin existed in `node_modules`. The Capacitor shell runs in **Android System WebView**,
+which does **not** implement `webkitSpeechRecognition` — that API is a Chrome-branded feature
+backed by Google's servers, not part of the WebView platform surface.
 
 **Consequence:** every STT call in the current APK silently fails. The v1 code treats
 `webkitSpeechRecognition` as always-present, so the app shows its "please use Chrome" banner on
@@ -33,11 +36,30 @@ runtime capability probing:
 and promotes the typed-response path, and **every exercise except live scoring still works**.
 That is the difference between "degraded" and "broken".
 
-To light up STT in the APK:
+**Status: the plugin is now installed.** `@capacitor-community/speech-recognition@7.0.1` was
+added and synced, so `capacitor.plugins.json` now lists
+`com.getcapacitor.community.speechrecognition.SpeechRecognition` and the APK selects
+`CapacitorSpeechAdapter` at runtime. No application code changed — which was the point of the
+adapter layer.
 
-    npm i @capacitor-community/speech-recognition && npx cap sync android
+Verified against the installed plugin, not assumed:
 
-No application code changes — the adapter is selected at runtime.
+| Adapter assumption | Plugin reality |
+|---|---|
+| registered name `SpeechRecognition` | `registerPlugin('SpeechRecognition')`; native class name matches |
+| `available()` → `{available}` | matches |
+| `start({language, maxResults, partialResults, popup})` → `{matches?}` | all four options exist |
+| `checkPermissions()` → `{speechRecognition}` | `speechRecognition: PermissionState` |
+| `addListener('partialResults', d => d.matches)` | matches |
+| `addListener('listeningState', d => d.status)` | `'started' \| 'stopped'` |
+
+The plugin compiles against `project(':capacitor-android')`, i.e. this app's Capacitor 8.5.2, and
+the four Capacitor APIs it uses (`getPermissionState`, `notifyListeners`, `bridge.getActivity`,
+`bridge.getContext`) are all present in 8.5.2. Both the plugin and Capacitor 8 declare
+`JavaVersion.VERSION_21`, so **JDK 21 is required to build**.
+
+The web/PWA build is unaffected: `isPluginAvailable()` returns false off-device, so Chrome still
+selects `WebSpeechAdapter`.
 
 ### Fact 2 — Capacitor already bridges the WebView mic permission
 
