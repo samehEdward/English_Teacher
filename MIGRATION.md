@@ -88,26 +88,27 @@ still said "English Fluency Studio" in v1 navy with shortcuts to Read Aloud and 
 | Horizontal overflow on every screen | none |
 | Fonts | all five faces load from the bundle |
 
-### Not verified — be explicit
+### On a real device — Samsung Galaxy S24+ (2026-09-23)
 
-1. **No physical device yet.** The native adapters were tested against mocks built from the
-   plugins' Java, and the APK builds, but neither plugin has run on a phone. `adb devices` was empty
-   at every check.
-2. **Real microphone.** The browser pane blocks capture, so recognition was exercised with a
-   scripted recognizer, not a voice.
-3. **Service worker.** Registration is blocked in the test browser; `sw.js` is served correctly.
+Installed by copying the APK over USB file transfer (adb could not see the phone: no ADB interface
+was exposed even with USB debugging and Auto Blocker off).
+
+| Check | Result |
+|---|---|
+| German voice (native text-to-speech) | works |
+| Speech recognition (native, non-partial mode) | works: spoken answer appears in the answer box |
+
+### Still not verified
+
+1. **Service worker.** Registration is blocked in the test browser; `sw.js` is served correctly.
+2. **Other Android devices.** Only one phone tested; a phone without German voice data should show
+   the **Installieren** prompt, which has not been seen on a device.
 
 ## Remaining work
 
-1. **Install on a phone and listen.** With USB debugging on:
-   `adb install -r android/app/build/outputs/apk/debug/app-debug.apk`, then check `chrome://inspect`
-   for the WebView console. Watch for:
-   - a German voice (if the phone has none, the app says so and offers **Installieren**);
-   - recognition returning text, and no "Audio recording error";
-   - **tap-stop leaving the field empty** — would mean the recognizer took longer than the 8 s
-     watchdog after stop; raise `STOP_WATCHDOG_MS.capacitor` in `speechController.js`;
-   - the mic staying red for several seconds after a very quick stop tap is expected, not a bug:
-     the recognizer finishes its own processing before reporting back.
+1. **Watch on other phones.** If a spoken answer ever stays empty after tapping stop, the
+   recognizer needed longer than the 8 s watchdog; raise `STOP_WATCHDOG_MS.capacitor` in
+   `speechController.js`.
 2. **Arabic font.** Arabic uses the device's system face (Noto Naskh on most Android phones). If a
    device renders it poorly, bundle `@fontsource/noto-naskh-arabic`.
 3. **Content depth.** `it_ad_lockout` and `lab_critical_val` have 2 steps; the rest have 3.
