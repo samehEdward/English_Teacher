@@ -29,7 +29,6 @@ class AudioEngine {
     this._idleTimer = null;
     this._unlocked = false;
     this._muted = false;
-    this._activeAnalysers = new Set();
     this._supported = typeof window !== 'undefined' &&
       !!(window.AudioContext || window.webkitAudioContext);
   }
@@ -137,57 +136,16 @@ class AudioEngine {
     }
   }
 
-  /**
-   * Analyser node for a live MediaStream. Callers never see the context.
-   * @returns {{analyser: AnalyserNode, release: Function}|null}
-   */
-  createAnalyser(stream, { fftSize = 256 } = {}) {
-    const ctx = this._context();
-    if (!ctx || !stream) return null;
-
-    try {
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = fftSize;
-      analyser.smoothingTimeConstant = 0.75;
-
-      const source = ctx.createMediaStreamSource(stream);
-      source.connect(analyser);
-
-      const handle = {
-        analyser,
-        release: () => {
-          this._activeAnalysers.delete(handle);
-          try { source.disconnect(); } catch (e) { /* already gone */ }
-          try { analyser.disconnect(); } catch (e) { /* already gone */ }
-          this._touch();
-        }
-      };
-
-      this._activeAnalysers.add(handle);
-      this._clearIdleTimer(); // never suspend while an analyser is live
-      return handle;
-    } catch (err) {
-      console.warn('[audioEngine] createAnalyser failed', err);
-      return null;
-    }
-  }
-
-  /** Release every analyser. Called by speechController on hard stop. */
-  releaseAllAnalysers() {
-    Array.from(this._activeAnalysers).forEach((h) => h.release());
-  }
-
   // -- idle suspension ------------------------------------------------------
   // Keeping a running context alive costs battery on Android. Suspend after a
   // period of silence; _context() resumes transparently on next use.
 
   _touch() {
     this._clearIdleTimer();
-    if (this._activeAnalysers.size > 0) return;
 
     this._idleTimer = setTimeout(() => {
       this._idleTimer = null;
-      if (!this._ctx || this._activeAnalysers.size > 0) return;
+      if (!this._ctx) return;
       if (this._ctx.state === 'running') {
         this._ctx.suspend().catch(() => {});
       }

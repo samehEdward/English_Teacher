@@ -121,6 +121,7 @@ class ActionBar {
    * stays visually balanced rather than drifting to the edges.
    */
   _slotFor(index) {
+    if (!this._mic) return index;
     const n = this._buttons.length;
     if (n <= 2) return index === 0 ? 1 : 2;  // inner slots only
     if (n === 3) return [0, 1, 2][index];
@@ -132,6 +133,7 @@ class ActionBar {
 
     this.slots.forEach((btn) => {
       btn.hidden = true;
+      btn.classList.remove('bar-btn--primary');
       btn.innerHTML = '';
       btn.disabled = false;
       btn.removeAttribute('aria-disabled');
@@ -143,6 +145,7 @@ class ActionBar {
 
       btn.hidden = false;
       btn.disabled = !!action.disabled;
+      btn.classList.toggle('bar-btn--primary', !!action.primary);
       if (action.disabled) btn.setAttribute('aria-disabled', 'true');
       btn.setAttribute('aria-label', action.ariaLabel || action.label);
       btn.innerHTML = `${icon(action.icon)}<span class="bar-label">${action.label}</span>`;
@@ -169,11 +172,6 @@ class ActionBar {
       return;
     }
 
-    if (state === SpeechState.RECORDING) {
-      if (this._mic && this._mic.onStop) this._mic.onStop();
-      return;
-    }
-
     if (state === SpeechState.PROCESSING) return;
 
     if (this._mic && this._mic.onStart) {
@@ -192,6 +190,10 @@ class ActionBar {
 
     // No STT backend on this platform: hide the FAB rather than offer a
     // control that cannot work. Modules keep their typed-input path.
+    // Without a mic the bar drops the centre column and spreads the buttons
+    // evenly, instead of leaving a hole where the mic would be.
+    this.root.dataset.mic = hasMic && supported ? 'on' : 'off';
+
     if (!hasMic || !supported) {
       this.fab.style.visibility = 'hidden';
       this.fab.setAttribute('aria-hidden', 'true');
@@ -205,9 +207,7 @@ class ActionBar {
     this.fab.disabled = false;
     this.fab.dataset.state = state;
 
-    const showStop = state === SpeechState.LISTENING ||
-                     state === SpeechState.RECORDING ||
-                     state === SpeechState.SPEAKING;
+    const showStop = state === SpeechState.LISTENING || state === SpeechState.SPEAKING;
 
     const micIcon = this.fab.querySelector('.fab-icon-mic');
     const stopIcon = this.fab.querySelector('.fab-icon-stop');
@@ -215,7 +215,7 @@ class ActionBar {
     if (stopIcon) stopIcon.classList.toggle('hidden', !showStop);
 
     let label = labels.idle;
-    if (state === SpeechState.LISTENING || state === SpeechState.RECORDING) label = labels.listening;
+    if (state === SpeechState.LISTENING) label = labels.listening;
     else if (state === SpeechState.SPEAKING) label = labels.speaking;
     else if (state === SpeechState.PROCESSING) label = labels.busy;
 
@@ -223,9 +223,10 @@ class ActionBar {
     this.fab.setAttribute('aria-pressed', String(state === SpeechState.LISTENING));
   }
 
+  // The stylesheet reserves room for whichever bottom bar is showing; this
+  // flag tells it the action bar is up.
   _applyViewportReserve(hasBar) {
-    const viewport = document.getElementById('appViewport');
-    if (viewport) viewport.classList.toggle('no-action-bar', !hasBar);
+    document.body.classList.toggle('has-action-bar', hasBar);
   }
 
   destroy() {

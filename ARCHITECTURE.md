@@ -1,339 +1,183 @@
-# EchoSpeak — Architecture & Audio State Machine (v2)
+# EchoSpeak — architecture (v3)
 
-Mobile-first rebuild targeting **Android WebView (Capacitor) first**, Chrome/Edge PWA second,
-desktop last. This document is the contract; the code in `src/core/` implements it.
+A spoken workplace-German trainer for people starting in German hospital **IT support** and
+**clinical laboratories**. Android first (Capacitor), browser/PWA second. The learner picks a
+workplace situation, answers the other person out loud (or by typing), and gets coaching on how
+professional the reply sounded — with Arabic explanations.
+
+This document describes what the code does today. History is in `git log`.
 
 ---
 
-## 0. Two verified facts that shape this design
+## 1. What the app is
 
-Both were verified against this repository, not assumed.
+Three tabs and one full-screen session:
 
-### Fact 1 — There is no SpeechRecognition in the Android APK
-
-*(Resolved — see the note at the end of this section. The reasoning is kept because it is why
-the adapter layer exists.)*
-
-At the time of the rebuild, `android/app/src/main/assets/capacitor.plugins.json` was `[]` and no
-speech plugin existed in `node_modules`. The Capacitor shell runs in **Android System WebView**,
-which does **not** implement `webkitSpeechRecognition` — that API is a Chrome-branded feature
-backed by Google's servers, not part of the WebView platform surface.
-
-**Consequence:** every STT call in the current APK silently fails. The v1 code treats
-`webkitSpeechRecognition` as always-present, so the app shows its "please use Chrome" banner on
-its own primary target.
-
-**Design response:** STT goes behind an **adapter interface** (`src/core/sttAdapters.js`) with
-runtime capability probing:
-
-| Adapter | Selected when | Where it runs |
-|---|---|---|
-| `CapacitorSpeechAdapter` | `window.Capacitor.Plugins.SpeechRecognition` exists | APK, once the plugin is installed |
-| `WebSpeechAdapter` | `window.(webkit)SpeechRecognition` exists | Chrome / Edge PWA |
-| `NullSttAdapter` | neither | Android System WebView today, Firefox, older iOS |
-
-`NullSttAdapter` is not an error state. It reports `supported === false`, the UI hides the mic FAB
-and promotes the typed-response path, and **every exercise except live scoring still works**.
-That is the difference between "degraded" and "broken".
-
-**Status: the plugin is now installed.** `@capacitor-community/speech-recognition@7.0.1` was
-added and synced, so `capacitor.plugins.json` now lists
-`com.getcapacitor.community.speechrecognition.SpeechRecognition` and the APK selects
-`CapacitorSpeechAdapter` at runtime. No application code changed — which was the point of the
-adapter layer.
-
-Verified against the installed plugin, not assumed:
-
-| Adapter assumption | Plugin reality |
+| Screen | Job |
 |---|---|
-| registered name `SpeechRecognition` | `registerPlugin('SpeechRecognition')`; native class name matches |
-| `available()` → `{available}` | matches |
-| `start({language, maxResults, partialResults, popup})` → `{matches?}` | all four options exist |
-| `checkPermissions()` → `{speechRecognition}` | `speechRecognition: PermissionState` |
-| `addListener('partialResults', d => d.matches)` | matches |
-| `addListener('listeningState', d => d.status)` | `'started' \| 'stopped'` |
+| **Üben** (home) | Pick a scenario. Each is shown as a *ticket*: `INC-…` on the service desk, `LAB-…` in the lab. A finished ticket is stamped **Gelöst** / **Freigegeben**. |
+| **Session** | The conversation. The other person's line appears; the learner answers by mic or keyboard, taps **Senden**, gets a coaching card, taps **Weiter**. Ends with a summary and the stamp. |
+| **Wörter** | Searchable workplace vocabulary with IPA, Arabic meaning and playback. |
+| **Quiz** | "Welche Antwort ist professionell?" — multiple choice. |
 
-The plugin compiles against `project(':capacitor-android')`, i.e. this app's Capacitor 8.5.2, and
-the four Capacitor APIs it uses (`getPermissionState`, `notifyListeners`, `bridge.getActivity`,
-`bridge.getContext`) are all present in 8.5.2. Both the plugin and Capacitor 8 declare
-`JavaVersion.VERSION_21`, so **JDK 21 is required to build**.
+Read Aloud, Shadowing, Dictation, Phonetics, generic Roleplay, the Vault and Text-Politur were
+removed in v3: the app does one thing. They are recoverable from git history.
 
-The web/PWA build is unaffected: `isPluginAvailable()` returns false off-device, so Chrome still
-selects `WebSpeechAdapter`.
+### Content
 
-### Fact 2 — Capacitor already bridges the WebView mic permission
+`src/data/vocationalData.js` holds 20 scenarios (IT + lab × German + English, 5 each, identical
+order and step counts in both languages). Each step has the partner's line, three phrasings — one
+professional and two realistic mistakes — and feedback: a correction, a key term with IPA, the next
+workplace action, and Arabic coaching.
 
-`node_modules/@capacitor/android/.../BridgeWebChromeClient.java:102-124` already overrides
-`onPermissionRequest` and maps `android.webkit.resource.AUDIO_CAPTURE` to `RECORD_AUDIO` +
-`MODIFY_AUDIO_SETTINGS` through the activity-result permission launcher.
+The **glossary and quiz are derived** from the scenarios (`src/app/content.js`): every step's key
+term becomes a glossary entry and every step becomes a quiz question, merged with the few authored
+entries. That turned 4 terms and 2 questions per domain into 18 and 15 without inventing content.
 
-**Consequence:** the `pendingPermissionRequest` field in the current `MainActivity.java` is
-**dead code** — it is declared, null-checked, and never assigned, because nothing installs a
-`WebChromeClient` that would populate it.
+### Scoring (`src/app/scoring.js`)
 
-**Design response:** `MainActivity` must **not** install its own `WebChromeClient`. Doing so
-replaces Capacitor's and silently kills the file chooser, geolocation and JS dialogs. The new
-`MainActivity` instead:
+The learner answers in their own words, so exact matching is useless. The answer is compared with
+**each** phrasing (content-word overlap with light stemming; umlauts folded so speech-to-text output
+and typing compare equally). Verdicts:
 
-1. Lets Capacitor own `onPermissionRequest`.
-2. Registers a `@CapacitorPlugin` exposing permission **state** to JS (`check`, `request`,
-   `openSettings`) so the web layer can render an accurate, non-blocking permission UI.
-3. Releases the mic in `onPause` so it is never held while backgrounded.
+| Verdict | Rule |
+|---|---|
+| **Vorsicht** (risky) | closest to one of the *mistakes*, clearly ahead of the professional phrasing |
+| **Professionell** | ≥ 0.55 similarity to the professional phrasing |
+| **Auf gutem Weg** | ≥ 0.30 |
+| **Eigene Formulierung** | too different to judge — shown with the model answer, not marked wrong |
+
+Validated against the data: all 56 professional phrasings score *Professionell*, all 112 mistakes
+score *Vorsicht*. It is a similarity heuristic, not grammar checking, and the labels say so.
 
 ---
 
-## 1. Directory structure
+## 2. Directory structure
 
     src/
-      core/                     # NEW — platform layer, zero UI, zero app knowledge
-        stateMachine.js         # generic deterministic FSM + generation tokens
-        audioEngine.js          # THE single AudioContext (chimes + analysers)
-        permissionGate.js       # mic permission, WebView-safe, never blocks UI
-        sttAdapters.js          # SttAdapter interface + 3 implementations
-        speechController.js     # single source of truth: STT + TTS + mic ownership
-      modules/                  # feature views (unchanged responsibilities)
-      data/                     # scenario / lesson / glossary content
-      services/                 # storageService, diffEngine, pwaInstaller
+      main.js                 bootstrap: shell wiring, routes, fonts, styles
+      app/
+        router.js             hash router; every navigation resets speech
+        store.js              one versioned localStorage key: settings, progress, quiz
+        content.js            scenarios as tickets; derived glossary and quiz
+        scoring.js            answer evaluation (pure)
+        strings.js            all interface copy, DE + EN
+        dom.js                h() element builder - no HTML string templates
+      views/
+        home.js session.js words.js quiz.js settings.js common.js
+      core/                   platform layer, no UI
+        speechController.js   policy: state machine, provenance, mic ownership
+        sttAdapters.js        speech-to-text backends
+        ttsAdapters.js        text-to-speech backends
+        permissionGate.js     mic permission as a state, never a throw
+        stateMachine.js       deterministic FSM with generation tokens
+        audioEngine.js        the single AudioContext (UI chimes)
+        nativeBridge.js       Capacitor plugin resolution
+      ui/
+        actionBar.js          session controls; the mic mirrors the state machine
+        statusStrip.js        transient messages (mic state, permission, missing voice)
+        sheet.js icons.js
       styles/
-        tokens.css              # NEW — design tokens, safe-area vars
-        shell.css               # NEW — header, nav rail, viewport, bottom bar, FAB
-        components.css          # NEW — buttons, forms, chat, mic, cards
-        legacy-modules.css      # main.css minus shell + minus !important patches
+        tokens.css base.css shell.css views.css
+      data/
+        vocationalData.js
 
-**Deleted concepts:** `services/speechService.js` (replaced by `core/speechController.js`) and the
-STT/TTS half of `services/audioRecorder.js`. The recording half moves behind
-`speechController.startRecording()` so it can be arbitrated against STT.
+Views build DOM with `h()`, never by concatenating HTML. The v2 modules interpolated scenario text
+into `innerHTML` templates and re-rendered and re-bound everything on each change.
 
 ---
 
-## 2. The state machine
+## 3. Speech: one controller, pluggable engines
 
-One machine, one owner, one mic.
+`speechController` owns **policy**; `sttAdapters` / `ttsAdapters` own **engines**. Nothing outside
+`src/core/` touches `speechSynthesis`, `SpeechRecognition`, `AudioContext` or `getUserMedia`.
 
-                        +--------------------------------------+
-                        |                                      |
-                        v                                      |
-      +--------+  listen()   +-----------+  result/stop  +------------+
-      |        |------------>| LISTENING |-------------->| PROCESSING |
-      |        |             +-----------+               +------------+
-      |        |                                               |
-      |  IDLE  |  record()   +-----------+                     | speak({turnId})
-      |        |------------>| RECORDING |---------------------+
-      |        |             +-----------+                     v
-      |        |                                         +----------+
-      |        |<----------------------------------------| SPEAKING |
-      +--------+          end / cancel / abort           +----------+
-           ^                                                   |
-           |            speak({intent:'user'})                 |
-           +---------------------------------------------------+
+### Engines are chosen at runtime
 
-### States
-
-| State | Mic held by | TTS active | Meaning |
-|---|---|---|---|
-| `IDLE` | nobody | no | resting; all hardware released |
-| `LISTENING` | `SpeechRecognition` | no | STT transcribing |
-| `RECORDING` | `MediaRecorder` | no | capturing audio for playback |
-| `PROCESSING` | nobody | no | scoring/diffing; hardware already released |
-| `SPEAKING` | nobody | yes | TTS playing |
-
-### The three invariants
-
-**I1 — `LISTENING` and `RECORDING` are mutually exclusive states, not a convention.**
-This is the dual-mic Android collision. v1's `shadowingModule.js:339-351` starts `MediaRecorder`
-and `SpeechRecognition` against the same device; on Android one of them takes `NotReadableError`
-or the recognizer aborts instantly. Because both are now *states* of one machine, the transition
-table makes the collision **structurally unrepresentable** — `startRecording()` while `LISTENING`
-is rejected by `canTransition()`. It cannot be reached by forgetting a convention.
-
-**I2 — Entering `IDLE`, `LISTENING` or `RECORDING` unconditionally tears down TTS.**
-`_hardStop()` runs `speechSynthesis.cancel()`, clears the utterance queue, kills the chunk timer,
-and releases mic tracks. There is no path into a mic state with audio still playing.
-
-**I3 — Every async callback is generation-checked.**
-`_gen` increments on *every* transition. Each recognition handler, utterance handler and
-`MediaRecorder` handler captures `gen` at creation and returns immediately if
-`gen !== this._gen`. A late `onend` from a session the user already cancelled cannot mutate
-current state.
-
-This replaces v1's flag soup. `speechService.js:252` guards `stopListening()` on `this.isListening`,
-which only flips true inside `onstart` — so stopping during the start handshake was a no-op that
-leaked an orphan recognizer. `abortListening()` nulled `this.recognition` *before* `onend` fired,
-so that handler ran against a dead reference. Generation tokens fix both without a single extra
-boolean, and without the `pendingStopEval` flag and 350ms timeout from commits `d5d9051` /
-`e0da9d8`.
-
----
-
-## 3. Zero rogue TTS — mechanically enforced
-
-The bug: `vocationalModule.js:92` and `roleplayModule.js:62` call
-`setTimeout(() => speechService.speak(...), 350)` from `initRoleplay()` / `initScenario()`, which
-run on **render** and on **language switch**. Open the tab, or flip EN/DE, and the device starts
-talking with no user action. `vocationalModule.js:968` nests a second one.
-
-The fix is not "delete those three calls" — it is making the class of bug unwriteable.
-`speak()` **requires a provenance argument** and refuses anything else:
-
-    speak({ text, intent: 'user' })            // inside a user-gesture window
-    speak({ text, intent: 'turn', turnId })    // direct reply to a submitted turn
-    speak({ text })                            // <-- REJECTED, returns false, warns
-
-**`intent: 'user'`** — valid only while a gesture window is open. The controller installs a
-capture-phase `pointerdown` / `keydown` / `touchend` listener that stamps `_lastGestureAt`. The
-window is `USER_GESTURE_WINDOW_MS = 3000` — long enough to survive an `await` on permission or
-storage, far too short to survive module construction, `DOMContentLoaded`, or a tab change.
-
-**`intent: 'turn'`** — the roleplay case: the AI must answer *after* the learner speaks. The module
-calls `openTurn()` when it accepts user input; that returns a one-shot `turnId`. `speak()` accepts
-that id exactly once, then burns it. `_hardStop()` and any transition to `IDLE` void the open turn,
-so a reply queued before the user left the screen cannot fire afterwards.
-
-Rejected calls increment `speechController.stats.blockedSpeakCalls` and warn with a stack trace, so
-a regression is visible in the console instead of audible to the user.
-
-**Autoplay reality check:** this gate is also what makes TTS *work*. Android WebView blocks
-`speechSynthesis.speak()` outside a user-activation context; v1's `setTimeout(..., 350)` broke the
-activation chain, so those auto-speaks were both unwanted *and* unreliable.
-
----
-
-## 4. TTS on Android: chunking, not resume-hacks
-
-Two Android quirks are handled in the controller's utterance queue:
-
-1. **Utterances over ~15s get silently paused.** The common workaround is a
-   `setInterval(() => synth.resume(), 10000)` keepalive, which on Android WebView can restart the
-   utterance from the beginning. Instead, text is **split at sentence boundaries into <=200-char
-   chunks** and spoken as a sequential queue. Each chunk is short enough never to hit the pause
-   watchdog, and cancellation granularity improves as a side effect.
-
-2. **`cancel()` immediately followed by `speak()` swallows the new utterance.** Every `speak()`
-   defers its first `synth.speak()` by one macrotask after `cancel()`, re-checking the generation
-   token before it fires.
-
-**Chunking must not break word highlighting.** `readAloudModule` drives its karaoke highlight off
-`onboundary.charIndex`, which is chunk-relative. Each chunk carries its `offset` into the original
-string and the controller emits `charIndex: chunk.offset + event.charIndex`, so consumers keep
-receiving absolute indices into the text they passed in.
-
----
-
-## 5. Single AudioContext
-
-v1 creates **two**: `audioRecorder.audioContext` (visualizer, line 47) and `audioRecorder._chimeCtx`
-(chimes, line 208). Mobile Chrome caps hardware contexts at ~6; every unreleased one is permanent,
-so a handful of tab switches exhausts the budget and all audio dies silently.
-
-`core/audioEngine.js` owns exactly one, lazily constructed **on the first user gesture** (a context
-built before one is born `suspended` and often never resumes on Android). It exposes:
-
-- `playChime(type)` — `success` | `tap` | `alert` | `error`
-- `createAnalyser(stream)` -> `{ analyser, release() }` — callers never touch the context
-- `unlock()` — idempotent, called from the global gesture listener
-- 30s idle auto-suspend, transparent auto-resume
-
-The context is never `close()`d: a closed context cannot be reopened and the browser's count
-never drops.
-
----
-
-## 6. Permission handling that cannot lock the UI red
-
-`core/permissionGate.js` returns a **state**, never throws at the caller:
-
-| Result | Cause | UI response |
+| | On the Android device (APK) | In Chrome / the PWA |
 |---|---|---|
-| `granted` | mic available | proceed |
-| `prompt` | not yet asked | "Tap to enable microphone" |
-| `denied` | user said no / OS blocked | actionable hint + `openSettings()` on Android; **retryable** |
-| `busy` | `NotReadableError` — another app holds the mic | "Close other apps, then retry" |
-| `unavailable` | `NotFoundError` / no `getUserMedia` | hide mic UI, promote typed input |
+| speech-to-text | `@capacitor-community/speech-recognition` 7.0.1 | Web Speech `SpeechRecognition` |
+| text-to-speech | `@capacitor-community/text-to-speech` 8.0.2 (native Android engine) | Web Speech `speechSynthesis` |
+| neither available | typed answers; mic hidden | same |
 
-`denied` is **cached for 60s only**, never permanently. v1's failure mode was latching a red error
-state that survived the user granting permission in Android settings and returning to the app.
-`navigator.permissions.query({name:'microphone'})` throws in Android WebView, so it is try/caught
-and falls back to a `getUserMedia` probe whose tracks are stopped immediately.
+Why native on the device: Android System WebView has **no** `webkitSpeechRecognition`, and its
+`speechSynthesis` is unreliable (empty voice lists, silent or cut-off speech, missing German voices).
+Plugins are resolved through `registerPlugin()` + `isPluginAvailable()` (`nativeBridge.js`) —
+`window.Capacitor.Plugins.X` is only populated by `registerPlugin()`, never by the bridge itself.
 
----
+### Native STT runs in non-partial mode — on purpose
 
-## 7. Mobile UI shell
+Verified against `SpeechRecognition.java`: in partial mode `start()` resolves **immediately**, the
+final text arrives later as an event, "stopped" is reported *before* that final text, errors reject
+an already-resolved call and vanish, and `stop()` never resolves. The first version treated the early
+resolve as "finished" and ended every session ~50 ms after it began. In non-partial mode `start()`
+resolves with the result or **rejects with the error** — reliable, at the cost of no live interim
+text on the phone. "No match" / "No speech input" end quietly; real errors are reported. A 45 s cap
+covers recognizers that never answer.
 
-**One fixed bottom bar, not two.** v1 has seven wide nav tabs *and* a per-module
-`.control-bar.mobile-app-bar`, both competing for the bottom of a phone screen, reconciled by ~370
-lines of `!important` media queries (`main.css:1397-1764`).
+### Native TTS
 
-    +-----------------------------+
-    | header (sticky, 52px)       |  brand - lang - streak - voice
-    +-----------------------------+
-    | nav rail (scroll-x chips)   |  7 chips, snap, no wrap, not fixed
-    +-----------------------------+
-    |                             |
-    | module viewport             |  the only scroll container
-    | (scroll-y, overscroll       |
-    |  contain, momentum)         |
-    |                             |
-    +-----------------------------+
-    |  [ic]  [ic]  (FAB)  [ic]    |  <- the ONLY fixed element
-    |      safe-area-inset        |
-    +-----------------------------+
+`speak()` resolves when the utterance finishes and rejects with *"This language is not supported"*
+when the phone has no German voice data. The status strip then offers **Installieren**, which opens
+the Android voice-data installer. `stop()` never settles the interrupted call, so the adapter ignores
+late results by session token.
 
-- **Bottom bar owns `position: fixed`.** Nav is a scrolling chip rail under the sticky header.
-- **FAB** is 64px, centred, `IDLE`->mic / `LISTENING`->stop, with a pulse ring driven by the state
-  machine rather than module-local booleans.
-- **Secondary controls** are 48x48 tap targets with SVG icons and single-word labels, max 4.
-- `viewport-fit=cover` + `padding-bottom: env(safe-area-inset-bottom, 16px)`.
-- The viewport reserves `--bottom-bar-h` so content never hides behind the bar.
+### The state machine
 
-**Performance:** `background-attachment: fixed` was already removed (`main.css:61`); this build
-keeps it out and additionally avoids `backdrop-filter` on the scroll container — the remaining
-repaint cost on mid-range Android — confining it to the two non-scrolling bars.
+    IDLE ──listen()──▶ LISTENING ──transcript──▶ PROCESSING ──finishProcessing()──▶ IDLE
+      │                    │  stop / no speech / error ─────────────────────────────▶ IDLE
+      └──speak()──▶ SPEAKING ──end / error / cancel──▶ IDLE
 
-**Input hardening:** commit `9db0ca5` already applied
-`spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off"` to all nine
-module-rendered fields; this rebuild verified that and adds the missing `enterkeyhint` so the
-Android soft keyboard shows Send/Done rather than a newline key. Note these are **lowercase HTML
-attributes** — the camelCase form (`spellCheck`, `autoCorrect`) is React's JSX convention and
-would be inert in this template-literal codebase.
+- **One mic owner.** Speech recognition is the only consumer of the microphone; the app records no
+  audio of its own. Entering `LISTENING` always cancels speech output first.
+- **Generation tokens.** Every transition bumps a counter; every async callback checks the value it
+  started with and drops itself if stale. A late result from a cancelled session cannot change state.
+- **Never stranded.** `stopListening()` goes straight to `IDLE` if the adapter has no live session,
+  and a 4 s watchdog forces `IDLE` if a recognizer accepts `stop()` but never ends.
 
----
+### No speech the learner didn't ask for
 
-## 8. Dual-domain vocational engine
+`speak()` refuses any call without provenance:
 
-The content layer (`src/data/vocationalData.js`) already carries both domains x both languages with
-Arabic coaching notes. The engine is **scripted branching, not an LLM** — there is no backend and
-the app is offline-first. "Advances dynamically" means:
+    speak({ text, intent: 'user' })           within 3 s of a real tap / key press
+    speak({ text, intent: 'turn', turnId })   one-shot reply to a submitted turn
 
-- each scenario is a `steps[]` chain; each step has `aiSpeech`, `suggestedResponses[]`,
-  `bestResponseIdx` and structured `feedback`
-- the learner may speak freely (STT), pick a suggestion, or type; the response is scored by
-  `diffEngine` similarity against the suggestions
-- the branch taken selects the next step and the escalation pressure
+Refused calls return `false`, count in `stats.blockedSpeakCalls`, and log the call site. Entering a
+session speaks nothing; the partner's next line is read only right after the learner taps
+**Weiter** (switchable in settings). Every route change calls `speechController.reset()`.
 
-| | Domain A — Enterprise / Hospital IT | Domain B — Medical & Chemical Lab |
-|---|---|---|
-| Systems | EPIC, Citrix, Active Directory, clinical apps | LIS, centrifuges, analysers, reagents |
-| Pressure | ticket escalation, emergency SLA, **Patientengefährdung** | critical values, calibration drift, hygiene |
-| Register | formal **Sie**, de-escalation, phone troubleshooting | **Probenannahme**, pre-analytics, QC reporting |
+### Permissions (`permissionGate.js`)
 
-Default register is formal German workplace **Sie**; English is the secondary track.
+Returns a state (`granted` / `prompt` / `denied` / `busy` / `unavailable`), never throws. `denied` is
+cached for 60 s only, so granting in Android settings recovers without a restart. On the device,
+once the native plugin grants `RECORD_AUDIO`, the gate returns immediately — it no longer opens and
+closes a WebView audio track right before the native recognizer takes the mic (that race caused
+sporadic "Audio recording error").
+
+Android side: `MainActivity` leaves Capacitor's `BridgeWebChromeClient` in charge of WebView
+permission requests and registers `MicPermissionPlugin`, which reports whether permission is
+granted, not yet asked, or permanently denied (only then is the settings screen the way forward).
 
 ---
 
-## 9. Module contract
+## 4. Design
 
-Every module implements:
+**Direction — a German hospital corridor.** Cool green-grey paper (`#EEF2EF`), ink `#16211D`, and
+one action colour, surgical teal `#0A6F5C`, used only for the mic and primary buttons. Amber for
+coaching, red for risky phrasing. Domain colours come from sample-tube caps: IT blue `#2E58C9`,
+lab violet `#7B3DB5`.
 
-    class Module {
-      constructor(container)  // render markup ONLY - no audio, no speak, no mic
-      mount()                 // becomes visible; may bind, must not speak
-      unmount()               // leaving; MUST release everything it owns
-      setLanguage(lang)       // re-render; must not speak
-    }
+**Type.** *Barlow Condensed* for titles and labels (the DIN-like voice of German hospital signage),
+*Atkinson Hyperlegible* for reading (letter shapes built to stay distinct — useful for long German
+compounds on a phone), *IBM Plex Mono* for ticket numbers. All bundled locally via `@fontsource`,
+Latin subsets only, so the offline APK needs no network.
 
-`main.js` calls `speechController.reset()` on every tab change and language switch — one call in
-one place, replacing the three-line `stopSpeaking(); stopListening(); stopRecording();` incantation
-repeated at six v1 call sites, each free to drift out of sync.
+**Signature.** Scenarios are tickets with a coloured cap stripe and a mono ID; completing one lands
+a rotated stamp. That is the one animated moment; everything else stays quiet.
 
-Modules never touch `speechSynthesis`, `SpeechRecognition`, `AudioContext`, `MediaRecorder` or
-`getUserMedia` directly. `speechController` is the only door.
+**Layout rules.** The document never scrolls — `.view` is the only scroll container. The tab bar is
+a normal flex item; in a session the fixed action bar replaces it and `.app` pads its bottom by the
+bar height, so the sticky draft field always sits directly above the bar. Tap targets ≥ 44–48 px,
+text fields at 16 px (below that Android zooms on focus), safe-area insets respected,
+`prefers-reduced-motion` honoured, `color-mix()` always preceded by a plain fallback for older
+WebViews.

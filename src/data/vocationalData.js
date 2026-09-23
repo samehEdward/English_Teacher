@@ -1841,65 +1841,7 @@ export const VOCATIONAL_GLOSSARY = {
 };
 
 // =========================================================================
-// MODE 3: ERROR CORRECTION & POLISH PRESETS
-// =========================================================================
-export const VOCATIONAL_POLISH_PRESETS = {
-  de: [
-    {
-      domain: 'it_support',
-      title: 'Ticket-Status-Aktualisierung (ITIL)',
-      rawDraft: 'Hallo Herr Schmidt, ich habe Ihr Ticket gesehen. Wir können jetzt nichts machen weil Server kaputt ist. Wir melden uns später wenn geht.',
-      polished: 'Guten Tag, Herr Schmidt. Bezüglich Ihres gemeldeten Vorfalls (Ticket #4092) möchten wir Sie darüber informieren, dass unsere Systemtechnik derzeit an einer unvorhergesehenen Serverstörung arbeitet. Wir rechnen mit einer Behebung innerhalb der nächsten zwei Stunden und halten Sie über den Fortschritt auf dem Laufenden.',
-      diffNotes: [
-        'Ersetzung der Umgangssprache ("nichts machen", "kaputt") durch professionelle ITIL-Terminologie ("unvorhergesehene Serverstörung").',
-        'Verbindliche Zeitschätzung statt vagem "später wenn geht".',
-        'Höfliche und vertrauensbildende Schlussformel ("halten Sie auf dem Laufenden").'
-      ],
-      arabicExplanation: 'الرسالة الأصلية عامية وضعيفة جداً وتفقد العميل الثقة. في بيئة العمل الألمانية، يجب استخدام مصطلحات دقيقة مثل "unvorhergesehene Serverstörung" بدلاً من "kaputt"، وتقديم إطار زمني تقديري مع الالتزام بصيغة "Siezen".'
-    },
-    {
-      domain: 'lab_medical',
-      title: 'Hämolytische Probe & Nachforderung',
-      rawDraft: 'Guten Tag Station 2. Die Blutprobe von Patient Müller ist kaputt und rot. Wir können nichts messen. Schicken Sie schnell neues Blut.',
-      polished: 'Guten Tag, Station 2. Bei der heute eingegangenen Serumprobe von Herrn Müller (Geb. 03.11.1965) wurde ein ausgeprägter Hämolyse-Index festgestellt. Eine zuverlässige Bestimmung der Kalium- und LDH-Werte ist methodisch nicht möglich. Wir bitten höflich um eine zeitnahe Abnahme einer Ersatzprobe.',
-      diffNotes: [
-        'Vermeidung von Laiensprache ("Blut ist kaputt und rot") -> "ausgeprägter Hämolyse-Index".',
-        'Konkrete Benennung der betroffenen Parameter (Kalium, LDH) statt pauschalem "nichts messen".',
-        'Klare Patientenidentifikation und kollegiale Bitte um Nachforderung.'
-      ],
-      arabicExplanation: 'لا يجوز في التقرير المخبري استخدام عبارة "الدم تالف وأحمر" بل يجب التعبير علمياً بأن هناك "ausgeprägter Hämolyse-Index"، وتحديد التحاليل المتأثرة بدقة كالبوتاسيوم، وطلب عينة بديلة بلباقة طبية.'
-    }
-  ],
-  en: [
-    {
-      domain: 'it_support',
-      title: 'Incident Update & SLA Notice',
-      rawDraft: 'Hey user, your PC issue is waiting because network team is not answering us. Wait more time please.',
-      polished: 'Dear Colleague, regarding your open support request (INC-8821), our team is actively collaborating with network engineering to diagnose the packet loss. We are tracking this closely under our priority SLA and will provide an updated status within the hour.',
-      diffNotes: [
-        'Replaced blame ("network team not answering") with professional collaboration ("actively collaborating with network engineering").',
-        'Professional salutation and explicit ticket ID reference.',
-        'Clear SLA commitment.'
-      ],
-      arabicExplanation: 'من قواعد الـ ITIL الذهبية عدم إلقاء اللوم على فرق الدعم الداخلية أمام المستخدم ("network team not answering"). يُستعاض عن ذلك بالتأكيد على العمل المشترك وتحديد موعد زمني واضح.'
-    },
-    {
-      domain: 'lab_medical',
-      title: 'Sample Recollection Request',
-      rawDraft: 'Hi ward, the blood tube came with no barcode and is totally clotted. Throwing it away, send another one.',
-      polished: 'Good afternoon, Ward 3. The coagulation sample received for patient Jane Doe arrived unlabelled without a primary barcode and exhibits marked micro-clotting. In accordance with laboratory biosafety and quality guidelines, we cannot process this specimen. Kindly submit a repeat citrated draw at your earliest convenience.',
-      diffNotes: [
-        'Professional clinical register ("unlabelled", "marked micro-clotting") replacing blunt phrasing ("throwing it away").',
-        'Explicit citation of laboratory quality and safety standards.',
-        'Specific tube type requested ("citrated draw").'
-      ],
-      arabicExplanation: 'في بروتوكولات المختبرات، يتم ذكر عدم مطابقة العينة لمعايير الجودة (unlabelled, micro-clotting) وتحديد نوع الأنبوب المطلوب بوضوح بدلاً من العبارات الفجة.'
-    }
-  ]
-};
-
-// =========================================================================
-// MODE 4: QUICK QUIZ & FLASHCARD CHALLENGE
+// SITUATION QUIZ (authored questions; more are derived from the scenarios)
 // =========================================================================
 export const VOCATIONAL_QUIZZES = {
   de: [

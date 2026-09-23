@@ -2,210 +2,60 @@
 <html lang="de">
   <head>
     <meta charset="UTF-8" />
-    <!-- viewport-fit=cover is what makes env(safe-area-inset-*) resolve to real
-         values on notched Android devices and iOS. Without it the bottom bar
-         sits under the gesture pill. -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0" />
-    <title>EchoSpeak — Vocational Speaking Studio</title>
-    <meta name="description" content="Offline-first spoken language training for Hospital/Enterprise IT Support and Medical & Chemical Laboratory workplaces, in German and English." />
-
+    <!-- viewport-fit=cover makes env(safe-area-inset-*) real on notched phones. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>EchoSpeak — Deutsch für IT-Support und Labor</title>
+    <meta name="description" content="Gesprächstraining für den Berufseinstieg im Krankenhaus: IT-Support und medizinisches Labor, auf Deutsch und Englisch, mit arabischen Erklärungen." />
+    <meta name="theme-color" content="#EEF2EF" />
+    <meta name="color-scheme" content="light" />
     <link rel="icon" type="image/svg+xml" href="./assets/icon-192-Bg_xctxH.svg" />
     
-    <meta name="theme-color" content="#0b1120" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="EchoSpeak" />
-    <meta name="mobile-web-app-capable" content="yes" />
     <link rel="apple-touch-icon" href="./assets/icon-192-CfN1vg-U.png" />
-
-    <!-- Order matters: tokens define the variables the other two consume.
-         legacy-modules.css is the trimmed remainder of the old main.css and
-         is retired module by module. -->
-    <script type="module" crossorigin src="./assets/index-BMsp6t0u.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-Ju7qMSQB.css">
+    <script type="module" crossorigin src="./assets/index-DbTtRthu.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CkeltNIj.css">
       <link rel="manifest" href="./manifest.json" />
   </head>
-  <body>
-    <div class="app-shell">
-      <!-- ============ header ============ -->
-      <header class="app-header">
-        <div class="brand">
-          <div class="brand-mark" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-              <line x1="12" y1="19" x2="12" y2="22"></line>
-            </svg>
-          </div>
-          <div class="brand-text">
-            <h1 class="brand-name">EchoSpeak</h1>
-            <p class="brand-sub" id="brandSubtitle">Vocational Speaking Studio</p>
-          </div>
+  <body data-mode="tabs">
+    <div class="app">
+      <header class="topbar">
+        <span class="topbar__brand">EchoSpeak</span>
+        <div class="lang-toggle" role="group" aria-label="Trainingssprache">
+          <button type="button" data-lang="de" aria-pressed="true">DE</button>
+          <button type="button" data-lang="en" aria-pressed="false">EN</button>
         </div>
-
-        <div class="header-actions">
-          <div class="lang-toggle" role="group" aria-label="Target language">
-            <button type="button" id="btnLangDe" data-lang="de" aria-pressed="true">DE</button>
-            <button type="button" id="btnLangEn" data-lang="en" aria-pressed="false">EN</button>
-          </div>
-
-          <button type="button" class="icon-btn" id="btnSettings" aria-label="Settings" aria-expanded="false" aria-haspopup="dialog">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="3"></circle>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-            </svg>
-          </button>
-        </div>
+        <button type="button" class="icon-btn" id="settingsBtn" aria-label="Einstellungen"></button>
       </header>
 
-      <!-- ============ nav rail ============
-           Horizontally scrolling chips. Not fixed, not at the bottom: the
-           bottom belongs to the active module's controls. -->
-      <nav class="nav-rail" id="navRail" role="tablist" aria-label="Training modules">
-        <button type="button" class="nav-chip" role="tab" data-target="vocationalModule" aria-selected="true">
-          <span class="chip-icon" aria-hidden="true">💼</span><span class="chip-label">Beruf</span>
-        </button>
-        <button type="button" class="nav-chip" role="tab" data-target="roleplayModule" aria-selected="false">
-          <span class="chip-icon" aria-hidden="true">💬</span><span class="chip-label">Dialog</span>
-        </button>
-        <button type="button" class="nav-chip" role="tab" data-target="readModule" aria-selected="false">
-          <span class="chip-icon" aria-hidden="true">📖</span><span class="chip-label">Lesen</span>
-        </button>
-        <button type="button" class="nav-chip" role="tab" data-target="shadowModule" aria-selected="false">
-          <span class="chip-icon" aria-hidden="true">🎧</span><span class="chip-label">Echo</span>
-        </button>
-        <button type="button" class="nav-chip" role="tab" data-target="dictModule" aria-selected="false">
-          <span class="chip-icon" aria-hidden="true">✍️</span><span class="chip-label">Diktat</span>
-        </button>
-        <button type="button" class="nav-chip" role="tab" data-target="phoneticsModule" aria-selected="false">
-          <span class="chip-icon" aria-hidden="true">🎯</span><span class="chip-label">Phonetik</span>
-        </button>
-        <button type="button" class="nav-chip" role="tab" data-target="vaultModule" aria-selected="false">
-          <span class="chip-icon" aria-hidden="true">📚</span><span class="chip-label">Vokabeln</span>
-        </button>
+      <!-- The only scroll container. Views mount here. -->
+      <main class="view" id="view"></main>
+
+      <nav class="tabbar" id="tabbar" aria-label="Bereiche">
+        <a href="#/" class="tabbar__tab" data-tab="practice"><span class="tabbar__icon" aria-hidden="true"></span><span class="tabbar__label"></span></a>
+        <a href="#/words" class="tabbar__tab" data-tab="words"><span class="tabbar__icon" aria-hidden="true"></span><span class="tabbar__label"></span></a>
+        <a href="#/quiz" class="tabbar__tab" data-tab="quiz"><span class="tabbar__icon" aria-hidden="true"></span><span class="tabbar__label"></span></a>
       </nav>
-
-      <!-- ============ viewport (the only scroll container) ============ -->
-      <main class="app-viewport" id="appViewport">
-        <div id="capabilityNotice" aria-live="polite"></div>
-
-        <section id="vocationalModule" class="module-view active" role="tabpanel" tabindex="-1"></section>
-        <section id="roleplayModule"   class="module-view" role="tabpanel" tabindex="-1"></section>
-        <section id="readModule"       class="module-view" role="tabpanel" tabindex="-1"></section>
-        <section id="shadowModule"     class="module-view" role="tabpanel" tabindex="-1"></section>
-        <section id="dictModule"       class="module-view" role="tabpanel" tabindex="-1"></section>
-        <section id="phoneticsModule"  class="module-view" role="tabpanel" tabindex="-1"></section>
-        <section id="vaultModule"      class="module-view" role="tabpanel" tabindex="-1"></section>
-      </main>
     </div>
 
-    <!-- ============ status strip ============
-         Single place where mic state, permission problems and errors surface.
-         Never a permanent red banner: it is dismissed as soon as state
-         recovers. -->
+    <!-- Session controls. The mic button mirrors the speech state machine. -->
+    <div class="action-bar" id="actionBar" role="toolbar" aria-label="Antworten" hidden>
+      <button type="button" class="bar-btn" data-slot="0" hidden></button>
+      <button type="button" class="bar-btn" data-slot="1" hidden></button>
+      <button type="button" class="fab-mic" id="fabMic" data-state="IDLE" aria-label="Sprechen">
+        <svg class="fab-icon-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+        <svg class="fab-icon-stop hidden" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>
+      </button>
+      <button type="button" class="bar-btn" data-slot="2" hidden></button>
+      <button type="button" class="bar-btn" data-slot="3" hidden></button>
+    </div>
+
+    <!-- Transient messages: mic state, permissions, missing voice data. -->
     <div class="status-strip" id="statusStrip" role="status" aria-live="polite">
       <span class="status-icon" id="statusIcon" aria-hidden="true"></span>
       <span class="status-text" id="statusText"></span>
       <button type="button" class="status-action hidden" id="statusAction"></button>
     </div>
 
-    <!-- ============ bottom action bar ============
-         The ONLY position:fixed element. Slots are filled by the active
-         module through ui/actionBar.js; the FAB is owned by the speech state
-         machine and is never driven by module-local flags. -->
-    <div class="action-bar" id="actionBar" role="toolbar" aria-label="Practice controls">
-      <button type="button" class="bar-btn" data-slot="0" hidden></button>
-      <button type="button" class="bar-btn" data-slot="1" hidden></button>
+    <div class="sheet" id="sheet"></div>
 
-      <button type="button" class="fab-mic" id="fabMic" data-state="IDLE" aria-label="Start speaking">
-        <svg class="fab-icon-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
-          <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-          <line x1="12" y1="19" x2="12" y2="22"></line>
-        </svg>
-        <svg class="fab-icon-stop hidden" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-          <rect x="6" y="6" width="12" height="12" rx="2"></rect>
-        </svg>
-      </button>
-
-      <button type="button" class="bar-btn" data-slot="2" hidden></button>
-      <button type="button" class="bar-btn" data-slot="3" hidden></button>
-    </div>
-
-    <!-- ============ settings sheet ============ -->
-    <div class="modal" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-      <div class="modal-panel">
-        <div class="modal-head">
-          <h3 id="settingsTitle">Einstellungen</h3>
-          <button type="button" class="modal-close" id="closeSettingsBtn" aria-label="Close">&times;</button>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="voiceSelect" id="voiceSelectLabel">Stimme</label>
-          <select id="voiceSelect" class="form-select"></select>
-        </div>
-
-        <div class="card" style="margin-bottom: var(--sp-3);">
-          <div class="row">
-            <span style="font-size: var(--fs-sm); font-weight: 600;">🔥 <span id="statStreak">0</span></span>
-            <span class="spacer"></span>
-            <span style="font-size: var(--fs-sm); font-weight: 600;">🗣️ <span id="statWords">0</span></span>
-          </div>
-        </div>
-
-        <div id="diagnostics" class="card" style="font-size: var(--fs-xs); color: var(--text-dim); font-family: var(--font-mono);"></div>
-
-        <div class="modal-actions">
-          <button type="button" class="btn btn-secondary" id="importTextBtn">Text importieren</button>
-          <button type="button" class="btn btn-primary" id="closeSettingsBtn2">Fertig</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ============ custom text import ============ -->
-    <div class="modal" id="customTextModal" role="dialog" aria-modal="true" aria-labelledby="customTextTitle">
-      <div class="modal-panel">
-        <div class="modal-head">
-          <h3 id="customTextTitle">Eigenen Text importieren</h3>
-          <button type="button" class="modal-close" id="closeCustomTextBtn" aria-label="Close">&times;</button>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="customTextTitleInput">Titel</label>
-          <input
-            type="text"
-            id="customTextTitleInput"
-            class="form-input"
-            placeholder="z.B. Schichtübergabe Labor"
-            spellcheck="false"
-            autocorrect="off"
-            autocapitalize="none"
-            autocomplete="off"
-            enterkeyhint="next"
-          />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="customTextareaInput">Text</label>
-          <textarea
-            id="customTextareaInput"
-            class="form-textarea"
-            rows="6"
-            placeholder="Text hier einfügen…"
-            spellcheck="false"
-            autocorrect="off"
-            autocapitalize="none"
-            autocomplete="off"
-            enterkeyhint="done"
-          ></textarea>
-        </div>
-
-        <div class="modal-actions">
-          <button type="button" class="btn btn-secondary" id="cancelCustomTextBtn">Abbrechen</button>
-          <button type="button" class="btn btn-primary" id="saveCustomTextBtn">Speichern</button>
-        </div>
-      </div>
-    </div>
-
   </body>
 </html>

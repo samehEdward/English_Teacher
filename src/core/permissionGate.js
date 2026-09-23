@@ -127,7 +127,7 @@ class PermissionGate {
   /**
    * Request access. MUST be called from a user gesture.
    * Opens the mic briefly to force the OS prompt, then releases it immediately
-   * so the device is free for SpeechRecognition or MediaRecorder.
+   * so the device is free for the speech recognizer.
    *
    * @returns {Promise<{state: string, error: Error|null}>}
    */
@@ -186,33 +186,6 @@ class PermissionGate {
       return result;
     } finally {
       this._inflight = null;
-    }
-  }
-
-  /**
-   * Acquire a real stream for recording. Assumes permission is already granted;
-   * still classifies failures rather than throwing.
-   * @returns {Promise<{stream: MediaStream|null, state: string, error: Error|null}>}
-   */
-  async acquireStream(constraints = {}) {
-    if (!this.hasGetUserMedia) {
-      return { stream: null, state: MicPermission.UNAVAILABLE, error: null };
-    }
-
-    const audio = Object.assign({
-      echoCancellation: true,
-      noiseSuppression: true,
-      autoGainControl: true
-    }, constraints);
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio });
-      this._cache(MicPermission.GRANTED);
-      return { stream, state: MicPermission.GRANTED, error: null };
-    } catch (err) {
-      const state = this._classify(err);
-      if (state !== MicPermission.DENIED) this.invalidate();
-      return { stream: null, state, error: err };
     }
   }
 

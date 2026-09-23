@@ -1,0 +1,460 @@
+/* Screens. */
+
+/* == page frame (Üben / Wörter / Quiz) ======================================= */
+
+.page {
+  display: grid;
+  gap: 14px;
+  padding: 8px 16px 28px;
+}
+.page__title {
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: var(--t-title);
+  line-height: 1.02;
+  letter-spacing: -0.005em;
+  max-width: 18ch;
+  padding-top: 4px;
+}
+.page__meta {
+  font-family: var(--f-mono);
+  font-size: var(--t-mono);
+  color: var(--muted);
+}
+
+/* == tickets ================================================================= */
+
+.tickets { display: grid; gap: 10px; }
+
+.ticket {
+  --cap: var(--it);
+  position: relative;
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 14px 16px 12px 24px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-label);
+  background: var(--card);
+  text-align: left;
+  overflow: hidden;
+  transition: transform 0.12s var(--ease), box-shadow 0.12s var(--ease);
+}
+.ticket[data-domain='lab_medical'] { --cap: var(--lab); }
+.ticket:active { transform: translateY(1px); }
+
+/* The tube cap / ticket colour stripe. */
+.ticket__cap {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  background: var(--cap);
+}
+
+.ticket__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.ticket__id,
+.session-bar__id {
+  font-family: var(--f-mono);
+  font-weight: 500;
+  font-size: var(--t-mono);
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.ticket__level {
+  font-family: var(--f-mono);
+  font-weight: 500;
+  font-size: var(--t-mono);
+  padding: 1px 6px;
+  border: 1.5px solid var(--ink);
+  border-radius: 3px;
+}
+.ticket__level--hi { border-color: var(--alert); color: var(--alert); }
+
+.ticket__title {
+  font-family: var(--f-display);
+  font-weight: 600;
+  font-size: var(--t-h2);
+  line-height: 1.12;
+  padding-right: 8px;
+}
+.ticket__tag { font-size: var(--t-small); color: var(--cap); font-weight: 700; }
+.ticket__who { font-size: var(--t-small); color: var(--muted); }
+.ticket__foot {
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--rule-strong);  /* the label's tear line */
+  font-family: var(--f-mono);
+  font-size: var(--t-mono);
+  color: var(--muted);
+}
+.ticket--done .ticket__title { color: var(--muted); }
+
+/* The stamp that closes a ticket: "Gelöst" on the service desk,
+   "Freigegeben" for a released lab result. The one bold gesture. */
+.stamp {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  padding: 1px 9px 0;
+  border: 2.5px solid var(--action);
+  border-radius: 4px;
+  color: var(--action);
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transform: rotate(-7deg);
+  mix-blend-mode: multiply;
+  opacity: 0.9;
+}
+.stamp--land { animation: stamp-land 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) 0.15s both; }
+@keyframes stamp-land {
+  from { transform: rotate(-16deg) scale(2.2); opacity: 0; }
+  60% { opacity: 0.95; }
+  to { transform: rotate(-7deg) scale(1); opacity: 0.9; }
+}
+
+/* == session ================================================================== */
+
+.session { --cap: var(--it); display: flex; flex-direction: column; min-height: 100%; }
+.session[data-domain='lab_medical'] { --cap: var(--lab); }
+
+.session-bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--topbar-h);
+  padding: 0 14px 0 4px;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+  box-shadow: inset 6px 0 0 var(--cap);
+}
+.session-bar__label { display: grid; min-width: 0; }
+.session-bar__title {
+  font-family: var(--f-display);
+  font-weight: 600;
+  font-size: 1.125rem;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.session-bar__progress { display: grid; justify-items: end; gap: 4px; }
+.session-bar__step { font-family: var(--f-mono); font-size: 11px; color: var(--muted); }
+
+.pips { display: flex; gap: 4px; }
+.pips li { width: 16px; height: 4px; border-radius: 2px; background: var(--rule-strong); }
+.pips li.now { background: var(--ink); }
+.pips li.done { background: var(--action); }
+
+.session-body { flex: 1; display: grid; align-content: start; gap: 14px; padding: 14px 14px 18px; }
+
+.situation {
+  padding: 10px 14px 12px;
+  border-radius: var(--r-label);
+  /* Plain fallbacks first: color-mix() needs WebView/Chrome 111+. */
+  background: var(--card);
+  border: 1px solid var(--rule);
+  background: color-mix(in srgb, var(--cap) 8%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--cap) 25%, var(--rule));
+  font-size: var(--t-small);
+}
+.situation > summary { cursor: pointer; list-style: none; }
+.situation > summary::-webkit-details-marker { display: none; }
+.situation p { margin-top: 4px; color: var(--ink); }
+
+/* == conversation ============================================================= */
+
+.thread { display: grid; gap: 14px; }
+
+.msg { display: grid; gap: 8px; }
+.msg--partner { grid-template-columns: 36px 1fr; align-items: start; }
+.msg--you { justify-items: end; }
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--cap);
+  color: #fff;
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 0.9375rem;
+  letter-spacing: 0.04em;
+}
+
+.msg__body {
+  display: grid;
+  gap: 6px;
+  padding: 10px 14px 12px;
+  border-radius: 4px var(--r-bubble) var(--r-bubble) var(--r-bubble);
+  background: var(--card);
+  border: 1px solid var(--rule);
+}
+.msg--you .msg__body {
+  max-width: 88%;
+  border-radius: var(--r-bubble) 4px var(--r-bubble) var(--r-bubble);
+  background: var(--action-soft);
+  border-color: transparent;
+}
+.msg__text { font-size: var(--t-body); }
+
+/* == coaching card ============================================================ */
+
+.coach {
+  --tone: var(--muted);
+  display: grid;
+  gap: 14px;
+  padding: 14px 16px 16px;
+  border-radius: var(--r-label);
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-top: 4px solid var(--tone);
+}
+.coach--strong { --tone: var(--action); }
+.coach--ok { --tone: var(--hint); }
+.coach--risky { --tone: var(--alert); }
+.coach--own { --tone: var(--ink); }
+
+.coach__head { display: grid; gap: 6px; justify-items: start; }
+.coach__note { font-size: var(--t-small); color: var(--muted); }
+.coach__row { display: grid; gap: 6px; }
+.coach__model { font-weight: 700; }
+.coach__avoid {
+  color: var(--alert);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: var(--alert);
+  text-decoration-color: color-mix(in srgb, var(--alert) 60%, transparent);
+}
+
+.verdict {
+  display: inline-block;
+  padding: 2px 10px 1px;
+  border-radius: 3px;
+  background: var(--tone, var(--muted));
+  color: #fff;
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 0.9375rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.verdict--strong { --tone: var(--action); }
+.verdict--ok { --tone: var(--hint); }
+.verdict--risky { --tone: var(--alert); }
+.verdict--own { --tone: var(--ink); }
+
+.term {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 2px 10px;
+  padding: 10px 12px;
+  border-radius: var(--r-label);
+  background: var(--paper);
+}
+.term__text { font-family: var(--f-display); font-weight: 600; font-size: 1.1875rem; line-height: 1.2; }
+.term__ipa { grid-column: 1; font-family: var(--f-ipa); font-size: var(--t-small); color: var(--muted); }
+.term .listen-btn { grid-column: 2; grid-row: 1 / span 2; }
+
+/* Arabic coaching: right-to-left, larger line height for Naskh. */
+.arabic {
+  border-radius: var(--r-label);
+  background: var(--hint-soft);
+  padding: 10px 14px;
+}
+.arabic > summary {
+  cursor: pointer;
+  font-family: var(--f-display);
+  font-weight: 600;
+  font-size: var(--t-label);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #7A5214;
+}
+.arabic__body {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+  font-family: var(--f-arabic);
+  font-size: 1.0625rem;
+  line-height: 1.85;
+  text-align: right;
+}
+
+/* == composer ================================================================= */
+
+/* Sticky to the bottom of the scroll view, which ends exactly above the
+   action bar - so the draft answer is always visible while speaking. */
+.composer {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  padding: 10px 14px 12px;
+  background: linear-gradient(to top, var(--paper) 70%, transparent);
+}
+.composer__field {
+  display: block;
+  width: 100%;
+  min-height: 56px;
+  max-height: 30vh;
+  padding: 12px 14px;
+  border: 1.5px solid var(--rule-strong);
+  border-radius: 12px;
+  background: var(--card);
+  font-size: 16px;          /* below 16px, mobile browsers zoom on focus */
+  line-height: 1.45;
+  resize: none;
+}
+.composer__field:focus { outline: none; border-color: var(--action); box-shadow: 0 0 0 3px var(--action-soft); }
+.composer__field::placeholder { color: var(--muted); }
+
+/* hint sheet */
+.hints { display: grid; gap: 10px; }
+.hint { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: start; }
+.hint__pick {
+  padding: 12px 14px;
+  border: 1.5px solid var(--rule);
+  border-radius: var(--r-control);
+  background: var(--paper);
+  text-align: left;
+  font-size: var(--t-small);
+  line-height: 1.45;
+}
+.hint__pick:active { border-color: var(--action); }
+
+/* == summary ================================================================== */
+
+.summary { display: grid; gap: 12px; padding-top: 6px; }
+.summary__ticket {
+  --cap: var(--it);
+  position: relative;
+  display: grid;
+  gap: 6px;
+  padding: 16px 18px 20px 24px;
+  border-radius: var(--r-label);
+  background: var(--card);
+  border: 1px solid var(--rule);
+  box-shadow: inset 8px 0 0 var(--cap);
+  min-height: 108px;
+}
+.summary__ticket[data-domain='lab_medical'] { --cap: var(--lab); }
+.summary__title { font-family: var(--f-display); font-weight: 700; font-size: 1.625rem; line-height: 1.05; max-width: 12ch; }
+.summary__ticket .stamp { right: 16px; bottom: 18px; font-size: 1.25rem; }
+.summary__steps { display: grid; gap: 8px; }
+.summary__steps li {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  gap: 10px;
+  align-items: start;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: var(--t-small);
+}
+.summary__n { font-family: var(--f-mono); color: var(--muted); }
+.summary__line { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+
+/* == words ==================================================================== */
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1.5px solid var(--rule-strong);
+  border-radius: var(--r-control);
+  background: var(--card);
+}
+.search:focus-within { border-color: var(--action); }
+.search__icon svg { width: 20px; height: 20px; color: var(--muted); display: block; }
+.search__field {
+  flex: 1;
+  min-height: var(--tap);
+  border: 0;
+  background: transparent;
+  font-size: 16px;
+}
+.search__field:focus { outline: none; }
+
+.words { display: grid; gap: 10px; }
+.word {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: var(--r-label);
+  background: var(--card);
+  border: 1px solid var(--rule);
+}
+.word__head { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: start; }
+.word__term { font-family: var(--f-display); font-weight: 600; font-size: 1.25rem; line-height: 1.15; }
+.word__ipa { font-family: var(--f-ipa); font-size: var(--t-small); color: var(--muted); }
+.word__other { font-style: italic; font-size: var(--t-small); }
+.word__ar { font-family: var(--f-arabic); font-size: 1.0625rem; line-height: 1.8; text-align: right; }
+.word__def { font-size: var(--t-small); }
+.word__example {
+  padding-left: 10px;
+  border-left: 3px solid var(--rule-strong);
+  font-size: var(--t-small);
+  color: var(--muted);
+}
+.word__source { font-family: var(--f-mono); font-size: 11px; color: var(--muted); }
+.empty { padding: 24px 0; color: var(--muted); text-align: center; }
+
+/* == quiz ===================================================================== */
+
+.question {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--r-label);
+  background: var(--card);
+  border: 1px solid var(--rule);
+}
+.question__count { font-family: var(--f-mono); font-size: var(--t-mono); color: var(--muted); }
+.question__who { font-family: var(--f-display); font-weight: 600; font-size: var(--t-label); letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
+.question__prompt {
+  padding: 12px 14px;
+  border-radius: 4px var(--r-bubble) var(--r-bubble) var(--r-bubble);
+  background: var(--paper);
+  font-size: var(--t-body);
+}
+
+.options { display: grid; gap: 10px; }
+.option {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--rule-strong);
+  border-radius: var(--r-control);
+  background: var(--card);
+  text-align: left;
+  font-size: var(--t-small);
+  line-height: 1.45;
+}
+.option:disabled { cursor: default; color: var(--muted); }
+.option--right { border-color: var(--action); background: var(--action-soft); color: var(--ink) !important; }
+.option--wrong { border-color: var(--alert); background: var(--alert-soft); color: var(--ink) !important; }
+
+.quiz-feedback { display: grid; gap: 12px; }
+.quiz-feedback:empty { display: none; }
+.quiz-feedback__verdict { font-family: var(--f-display); font-weight: 700; font-size: 1.375rem; }
+.quiz-feedback__verdict.is-right { color: var(--action); }
+.quiz-feedback__verdict.is-wrong { color: var(--alert); }
+.quiz-feedback__better { display: grid; gap: 6px; }
+.quiz-feedback__better p { font-weight: 700; }
+
+.quiz-done { display: grid; gap: 16px; justify-items: start; padding: 20px 0; }
+.quiz-done__score { font-family: var(--f-display); font-weight: 700; font-size: 2.25rem; line-height: 1; }

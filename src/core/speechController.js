@@ -1,14 +1,13 @@
 // speechController — the single source of truth for microphone and voice.
 //
-// Nothing outside src/core/ may touch speechSynthesis, SpeechRecognition,
-// MediaRecorder, AudioContext or getUserMedia. This is the only door.
+// Nothing outside src/core/ may touch speech synthesis, speech recognition,
+// AudioContext or getUserMedia. This is the only door.
 //
 // Guarantees:
-//   I1  LISTENING and RECORDING are mutually exclusive STATES, so the Android
-//       dual-mic collision is structurally unrepresentable rather than merely
-//       discouraged.
-//   I2  Entering IDLE, LISTENING or RECORDING always tears down TTS and
-//       releases mic tracks.
+//   I1  One owner of the microphone: speech recognition. The app records no
+//       audio of its own (the MediaRecorder path left with Shadowing), so no
+//       second consumer can collide with the recognizer on Android.
+//   I2  Entering IDLE or LISTENING always tears down speech output first.
 //   I3  Every async callback is generation-checked; a late event from a
 //       cancelled session cannot mutate current state.
 //   I4  speak() requires provenance. No gesture and no open turn means no
@@ -23,15 +22,13 @@ import { createTtsAdapter } from './ttsAdapters.js';
 export const SpeechState = {
   IDLE: 'IDLE',
   LISTENING: 'LISTENING',
-  RECORDING: 'RECORDING',
   PROCESSING: 'PROCESSING',
   SPEAKING: 'SPEAKING'
 };
 
 const TRANSITIONS = {
-  [SpeechState.IDLE]:       [SpeechState.LISTENING, SpeechState.RECORDING, SpeechState.SPEAKING, SpeechState.PROCESSING],
+  [SpeechState.IDLE]:       [SpeechState.LISTENING, SpeechState.SPEAKING, SpeechState.PROCESSING],
   [SpeechState.LISTENING]:  [SpeechState.PROCESSING, SpeechState.IDLE],
-  [SpeechState.RECORDING]:  [SpeechState.PROCESSING, SpeechState.IDLE],
   [SpeechState.PROCESSING]: [SpeechState.SPEAKING, SpeechState.LISTENING, SpeechState.IDLE],
   [SpeechState.SPEAKING]:   [SpeechState.IDLE, SpeechState.LISTENING, SpeechState.PROCESSING]
 };
@@ -67,18 +64,11 @@ class SpeechController {
 
     this._stopWatchdog = null;
 
-    // Mic ownership — exactly one of these is ever non-null
-    this._stream = null;
-    this._recorder = null;
-    this._recorderChunks = [];
-    this._analyserHandle = null;
-    this._recordResolve = null;
 
     // TTS provenance
     this._lastGestureAt = 0;
     this._openTurn = null;
 
-    this._lastRecordingUrl = null;
 
     this._installGestureTracker();
     this._installLifecycleGuards();
@@ -109,7 +99,6 @@ class SpeechController {
       sttBackend: this.stt.id,
       tts: this.tts.supported,
       ttsBackend: this.tts.id,
-      recording: typeof window !== 'undefined' && typeof window.MediaRecorder !== 'undefined',
       audio: audioEngine.supported
     };
   }
@@ -221,7 +210,7 @@ class SpeechController {
     if (!this._authorizeSpeak(intent, turnId, text)) return false;
 
     // Never talk over the microphone.
-    if (this.fsm.is(SpeechState.LISTENING, SpeechState.RECORDING)) {
+    if (this.fsm.is(SpeechState.LISTENING)) {
       this.stats.micCollisionsPrevented += 1;
       console.warn('[speech] speak() refused: microphone is active');
       return false;
@@ -330,16 +319,8 @@ class SpeechController {
       return { ok: false, reason: 'stt-unsupported' };
     }
 
-    if (this.fsm.is(SpeechState.RECORDING)) {
-      // I1: the collision the state machine exists to prevent.
-      this.stats.micCollisionsPrevented += 1;
-      console.warn('[speech] listen() refused: a recording holds the microphone');
-      return { ok: false, reason: 'mic-busy-recording' };
-    }
-
-    // I2: entering a mic state always kills TTS first.
+    // I2: entering the mic state always kills speech output first.
     this._hardStopTts();
-    this._releaseMic();
 
     if (this.fsm.is(SpeechState.SPEAKING)) {
       this.fsm.transition(SpeechState.IDLE, { reason: 'barge-in' });
@@ -466,259 +447,6 @@ class SpeechController {
 
   isListening() { return this.fsm.is(SpeechState.LISTENING); }
 
-  // == Recording (MediaRecorder) ===========================================
-
-  /**
-   * Record audio for playback. Mutually exclusive with listen() by design —
-   * this is the Android dual-mic fix.
-   *
-   * @returns {Promise<{ok: boolean, reason?: string, permission?: string}>}
-   */
-  async startRecording({ canvas = null, onError = null } = {}) {
-    if (typeof MediaRecorder === 'undefined') {
-      return { ok: false, reason: 'recording-unsupported' };
-    }
-
-    if (this.fsm.is(SpeechState.LISTENING)) {
-      this.stats.micCollisionsPrevented += 1;
-      console.warn('[speech] startRecording() refused: recognition holds the microphone');
-      return { ok: false, reason: 'mic-busy-listening' };
-    }
-
-    this._hardStopTts();
-    this._releaseMic();
-
-    if (this.fsm.is(SpeechState.SPEAKING)) {
-      this.fsm.transition(SpeechState.IDLE, { reason: 'record-preempt' });
-    }
-
-    const acquired = await permissionGate.acquireStream();
-    if (!acquired.stream) {
-      if (onError) {
-        onError({
-          error: acquired.state,
-          message: permissionGate.message(acquired.state, this.lang),
-          fatal: true,
-          permission: acquired.state
-        });
-      }
-      return { ok: false, reason: 'permission', permission: acquired.state };
-    }
-
-    const gen = this.fsm.transition(SpeechState.RECORDING, { reason: 'record' });
-    if (gen === null) {
-      acquired.stream.getTracks().forEach((t) => { try { t.stop(); } catch (e) {} });
-      return { ok: false, reason: 'illegal-transition' };
-    }
-
-    this._stream = acquired.stream;
-    this._recorderChunks = [];
-
-    let recorder;
-    try {
-      recorder = new MediaRecorder(this._stream, this._recorderOptions());
-    } catch (err) {
-      this._releaseMic();
-      this.fsm.transition(SpeechState.IDLE, { reason: 'recorder-construct-failed' });
-      if (onError) onError({ error: 'recorder-failed', message: String(err), fatal: true });
-      return { ok: false, reason: 'recorder-failed' };
-    }
-
-    this._recorder = recorder;
-
-    recorder.ondataavailable = (event) => {
-      if (this.fsm.isStale(gen)) return;
-      if (event.data && event.data.size > 0) this._recorderChunks.push(event.data);
-    };
-
-    recorder.onerror = (event) => {
-      if (this.fsm.isStale(gen)) return;
-      console.warn('[speech] MediaRecorder error', event);
-      if (onError) onError({ error: 'recorder-error', message: String(event.error || event), fatal: true });
-    };
-
-    recorder.onstop = () => {
-      // Deliberately NOT generation-checked: onstop must always release the
-      // microphone, even when the session was invalidated mid-flight.
-      const blob = this._recorderChunks.length
-        ? new Blob(this._recorderChunks, { type: recorder.mimeType || 'audio/webm' })
-        : null;
-
-      this._recorderChunks = [];
-      this._recorder = null;
-      this._releaseMic();
-
-      const resolve = this._recordResolve;
-      this._recordResolve = null;
-
-      if (this._lastRecordingUrl) {
-        URL.revokeObjectURL(this._lastRecordingUrl);
-        this._lastRecordingUrl = null;
-      }
-
-      const url = blob ? URL.createObjectURL(blob) : null;
-      this._lastRecordingUrl = url;
-
-      if (resolve) resolve(blob ? { blob, url } : null);
-    };
-
-    if (canvas) this._startWaveform(canvas, gen);
-
-    try {
-      recorder.start(100);
-    } catch (err) {
-      this._releaseMic();
-      this.fsm.transition(SpeechState.IDLE, { reason: 'recorder-start-failed' });
-      if (onError) onError({ error: 'recorder-failed', message: String(err), fatal: true });
-      return { ok: false, reason: 'recorder-failed' };
-    }
-
-    return { ok: true };
-  }
-
-  /**
-   * Stop recording and resolve with the captured audio.
-   * @returns {Promise<{blob: Blob, url: string}|null>}
-   */
-  stopRecording() {
-    return new Promise((resolve) => {
-      const recorder = this._recorder;
-
-      if (!recorder || recorder.state === 'inactive') {
-        this._releaseMic();
-        if (this.fsm.is(SpeechState.RECORDING)) {
-          this.fsm.transition(SpeechState.PROCESSING, { reason: 'record-stop-empty' });
-        }
-        resolve(null);
-        return;
-      }
-
-      this._recordResolve = resolve;
-
-      // Move out of RECORDING now: the hardware is about to be released and
-      // the module will be scoring next.
-      if (this.fsm.is(SpeechState.RECORDING)) {
-        this.fsm.transition(SpeechState.PROCESSING, { reason: 'record-stop' });
-      }
-
-      try {
-        recorder.stop();
-      } catch (err) {
-        this._recordResolve = null;
-        this._releaseMic();
-        resolve(null);
-      }
-    });
-  }
-
-  isRecording() { return this.fsm.is(SpeechState.RECORDING); }
-
-  _recorderOptions() {
-    const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'];
-    for (const mimeType of candidates) {
-      try {
-        if (MediaRecorder.isTypeSupported(mimeType)) return { mimeType };
-      } catch (e) { /* isTypeSupported can throw on old WebViews */ }
-    }
-    return undefined;
-  }
-
-  _releaseMic() {
-    this._stopWaveform();
-
-    if (this._analyserHandle) {
-      this._analyserHandle.release();
-      this._analyserHandle = null;
-    }
-
-    if (this._recorder) {
-      try {
-        if (this._recorder.state !== 'inactive') this._recorder.stop();
-      } catch (e) { /* already stopped */ }
-      this._recorder = null;
-    }
-
-    if (this._stream) {
-      try {
-        this._stream.getTracks().forEach((t) => t.stop());
-      } catch (e) { /* already stopped */ }
-      this._stream = null;
-    }
-  }
-
-  // == waveform =============================================================
-
-  _startWaveform(canvas, gen) {
-    if (!canvas || !this._stream) return;
-
-    const handle = audioEngine.createAnalyser(this._stream, { fftSize: 256 });
-    if (!handle) return;
-    this._analyserHandle = handle;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const bins = handle.analyser.frequencyBinCount;
-    const data = new Uint8Array(bins);
-
-    const draw = () => {
-      if (this.fsm.isStale(gen) || !this._analyserHandle) {
-        this._rafId = null;
-        this._drawIdleWave(ctx, canvas.width, canvas.height);
-        return;
-      }
-
-      this._rafId = requestAnimationFrame(draw);
-      handle.analyser.getByteTimeDomainData(data);
-
-      const w = canvas.width;
-      const h = canvas.height;
-      ctx.clearRect(0, 0, w, h);
-
-      const gradient = ctx.createLinearGradient(0, 0, w, 0);
-      gradient.addColorStop(0, '#06b6d4');
-      gradient.addColorStop(0.5, '#6366f1');
-      gradient.addColorStop(1, '#ec4899');
-
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = gradient;
-      ctx.beginPath();
-
-      const slice = w / bins;
-      let x = 0;
-      for (let i = 0; i < bins; i++) {
-        const v = data[i] / 128.0;
-        const y = (v * h) / 2;
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-        x += slice;
-      }
-      ctx.lineTo(w, h / 2);
-      ctx.stroke();
-    };
-
-    draw();
-  }
-
-  _stopWaveform() {
-    if (this._rafId) {
-      cancelAnimationFrame(this._rafId);
-      this._rafId = null;
-    }
-  }
-
-  _drawIdleWave(ctx, w, h) {
-    try {
-      ctx.clearRect(0, 0, w, h);
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = 'rgba(99, 102, 241, 0.25)';
-      ctx.beginPath();
-      ctx.moveTo(0, h / 2);
-      ctx.lineTo(w, h / 2);
-      ctx.stroke();
-    } catch (e) { /* canvas detached */ }
-  }
-
   // == global teardown ======================================================
 
   /**
@@ -732,10 +460,7 @@ class SpeechController {
     this._clearStopWatchdog();
     this._hardStopTts();
     this.stt.abort();
-    this._releaseMic();
-    audioEngine.releaseAllAnalysers();
     this._openTurn = null;
-    this._recordResolve = null;
 
     if (!this.fsm.is(SpeechState.IDLE)) {
       // force(): legality is irrelevant during teardown, and every in-flight

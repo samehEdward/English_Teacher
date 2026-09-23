@@ -21,13 +21,11 @@ const TONE_ICON = {
 const STATE_TEXT = {
   en: {
     [SpeechState.LISTENING]: 'Listening… tap stop when you finish.',
-    [SpeechState.RECORDING]: 'Recording…',
     [SpeechState.PROCESSING]: 'Checking your answer…',
     [SpeechState.SPEAKING]: 'Playing audio…'
   },
   de: {
     [SpeechState.LISTENING]: 'Ich höre zu… Zum Beenden auf Stopp tippen.',
-    [SpeechState.RECORDING]: 'Aufnahme läuft…',
     [SpeechState.PROCESSING]: 'Antwort wird geprüft…',
     [SpeechState.SPEAKING]: 'Audio wird abgespielt…'
   }
@@ -108,7 +106,7 @@ class StatusStrip {
     // A pinned actionable message (permission blocked) stays until the user
     // deals with it or the mic successfully starts.
     if (this._pinned) {
-      if (state === SpeechState.LISTENING || state === SpeechState.RECORDING) {
+      if (state === SpeechState.LISTENING) {
         this._pinned = false;
       } else {
         return;
@@ -123,7 +121,7 @@ class StatusStrip {
       return;
     }
 
-    const tone = state === SpeechState.LISTENING || state === SpeechState.RECORDING
+    const tone = state === SpeechState.LISTENING
       ? 'listening'
       : (state === SpeechState.SPEAKING ? 'speaking' : 'working');
 
@@ -179,7 +177,7 @@ class StatusStrip {
 
   /**
    * Render a microphone permission outcome with the right escape hatch.
-   * Called by modules when listen()/startRecording() reports a permission
+   * Called by views when listen() reports a permission
    * problem. Every branch is recoverable — none of them is a dead end.
    */
   showPermission(state, { onRetry = null } = {}) {
