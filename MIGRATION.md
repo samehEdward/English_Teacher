@@ -8,7 +8,7 @@ history (`git show 4a80ae8:MIGRATION.md`); most of it described modules that v3 
 ## v3 — rebuilt around one job
 
 Reported problems: the app did not work properly on the phone (voice problems), looked bad, was too
-complicated, and the code was still messy. Two commits address them.
+complicated, and the code was still messy. Three commits address them.
 
 ### 1. Device fixes — `fix(android): make mic and voice work on the device`
 
