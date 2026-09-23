@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- API 27+ can draw dark navigation-bar icons, so the navigation bar can
+         match the white tab/action bar above it. On older versions the icons
+         are always white, so the default dark navigation bar is kept there. -->
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:background">@null</item>
+        <item name="android:windowBackground">@color/paper</item>
+        <item name="android:statusBarColor">@color/paper</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">@color/card</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>

@@ -38,9 +38,10 @@ const TRANSITIONS = {
 const USER_GESTURE_WINDOW_MS = 3000;
 
 // How long to wait for a recognizer to honour stop() before forcing IDLE.
-// Generous: a real recognizer flushing buffered audio can take a second or
-// two, and cutting it short would discard a valid transcript.
-const STOP_WATCHDOG_MS = 4000;
+// Generous: a recognizer flushing buffered audio can take a while, and cutting
+// it short discards a valid transcript. The native Android recognizer only
+// starts its (often network) recognition after stop(), so it gets longer.
+const STOP_WATCHDOG_MS = { default: 4000, capacitor: 8000 };
 
 export const SpeakIntent = {
   USER: 'user',  // direct result of a user gesture
@@ -426,7 +427,7 @@ class SpeechController {
       console.warn('[speech] recognizer did not end after stop(); forcing IDLE');
       this.stt.abort();
       this.fsm.transition(SpeechState.IDLE, { reason: 'stop-watchdog' });
-    }, STOP_WATCHDOG_MS);
+    }, STOP_WATCHDOG_MS[this.stt.id] || STOP_WATCHDOG_MS.default);
   }
 
   _clearStopWatchdog() {

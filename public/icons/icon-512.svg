@@ -1,42 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <defs>
-    <linearGradient id="bgGrad512" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0f172a" />
-      <stop offset="100%" stop-color="#070a12" />
-    </linearGradient>
-    <linearGradient id="primGrad512" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#6366f1" />
-      <stop offset="45%" stop-color="#8b5cf6" />
-      <stop offset="100%" stop-color="#06b6d4" />
-    </linearGradient>
-    <filter id="glow512" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="16" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
-    </filter>
-  </defs>
-
-  <!-- Background rounded rect -->
-  <rect width="512" height="512" rx="112" fill="url(#bgGrad512)" />
-  <rect width="508" height="508" x="2" y="2" rx="110" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="4" />
-
-  <!-- Outer Ring Aura -->
-  <circle cx="256" cy="256" r="160" fill="none" stroke="url(#primGrad512)" stroke-width="8" filter="url(#glow512)" opacity="0.65" />
-
-  <!-- Sound Waves (Left & Right) -->
-  <path d="M120 200 C104 216, 104 296, 120 312" fill="none" stroke="#06b6d4" stroke-width="12" stroke-linecap="round" />
-  <path d="M152 224 C142 234, 142 278, 152 288" fill="none" stroke="#6366f1" stroke-width="10" stroke-linecap="round" />
-
-  <path d="M392 200 C408 216, 408 296, 392 312" fill="none" stroke="#06b6d4" stroke-width="12" stroke-linecap="round" />
-  <path d="M360 224 C370 234, 370 278, 360 288" fill="none" stroke="#6366f1" stroke-width="10" stroke-linecap="round" />
-
-  <!-- Center Microphone Icon -->
-  <g transform="translate(256, 235) scale(7) translate(-12, -12)">
-    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" fill="url(#primGrad512)" stroke="#ffffff" stroke-width="1.2" />
-    <path d="M19 10v2a7 7 0 0 1-14 0v-2" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-    <line x1="12" y1="19" x2="12" y2="22" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" />
-    <line x1="8" y1="22" x2="16" y2="22" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" />
+  <rect width="512" height="512" fill="#0A6F5C"/>
+  <g transform="translate(36 22.8) scale(4.4)">
+  <defs><clipPath id="body"><rect x="18" y="22" width="64" height="48" rx="8"/></clipPath></defs>
+  <rect x="18" y="22" width="64" height="48" rx="8" fill="#fff"/>
+  <path d="M28 69 L28 84 L43 69 Z" fill="#fff"/>
+  <g clip-path="url(#body)">
+    <rect x="18" y="22" width="9" height="24" fill="#2E58C9"/>
+    <rect x="18" y="46" width="9" height="24" fill="#7B3DB5"/>
   </g>
-
-  <!-- Accent Subtitle -->
-  <text x="256" y="440" text-anchor="middle" fill="#94a3b8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="700" letter-spacing="4">ECHOSPEAK</text>
-</svg>
+  <rect x="36" y="34" width="36" height="6" rx="3" fill="#16211D"/>
+  <rect x="36" y="49" width="24" height="6" rx="3" fill="#16211D" opacity="0.55"/></g></svg>

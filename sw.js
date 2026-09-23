@@ -2,7 +2,7 @@
 // Bumped for the v2 rebuild: the activate handler deletes every cache whose
 // name differs, so existing v1 installs purge their stale index.html and
 // hashed bundles instead of serving them forever.
-const CACHE_NAME = 'echospeak-pwa-v4';
+const CACHE_NAME = 'echospeak-pwa-v5';
 
 const PRECACHE_ASSETS = [
   './',

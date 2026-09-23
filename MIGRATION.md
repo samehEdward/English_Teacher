@@ -43,6 +43,25 @@ domain instead of 4 and 2.
 
 **Size.** JS bundle 340 KB → 170 KB; CSS 37 KB → 23 KB; ~200 KB of fonts bundled for offline use.
 
+### 3. Native shell — `chore: give the app its own icon, launch screen and status bar`
+
+The rebuilt web UI sat inside chrome that wasn't the app's: the home-screen icon and the launch
+screen were **Capacitor's stock logo**, the status bar was Capacitor's indigo, and the PWA manifests
+still said "English Fluency Studio" in v1 navy with shortcuts to Read Aloud and Shadowing.
+
+- New icon, rendered from one design by `scripts/make-icons.mjs` into every Android density
+  (legacy, round, adaptive foreground on a teal background) and every PWA size. It also mirrors into
+  the root `icons/` folder, because Vite resolves `index.html`'s favicon from the project root.
+- Android theme: v3 palette in `values/colors.xml`; paper launch screen and paper status bar with
+  dark icons; white navigation bar with dark icons on API 27+. `Light` instead of `DayNight`, so
+  system chrome never turns dark around the light-only web UI. Stock splash PNGs deleted.
+- Manifests: German name and description, paper theme colour, shortcuts to Üben / Wörter / Quiz,
+  stale v1 screenshots removed.
+- Service-worker cache `v4 → v5` so installed PWAs drop their old cache; `canvas-confetti`
+  uninstalled (nothing uses it).
+- Stop watchdog for the native recognizer raised from 4 s to 8 s: it only starts recognising after
+  the stop tap, often over the network, and cutting it off would lose the transcript.
+
 ---
 
 ## Verification
@@ -82,8 +101,13 @@ domain instead of 4 and 2.
 
 1. **Install on a phone and listen.** With USB debugging on:
    `adb install -r android/app/build/outputs/apk/debug/app-debug.apk`, then check `chrome://inspect`
-   for the WebView console. Watch for: German voice present (if not, the app offers the installer),
-   recognition returning text, and no "Audio recording error".
+   for the WebView console. Watch for:
+   - a German voice (if the phone has none, the app says so and offers **Installieren**);
+   - recognition returning text, and no "Audio recording error";
+   - **tap-stop leaving the field empty** — would mean the recognizer took longer than the 8 s
+     watchdog after stop; raise `STOP_WATCHDOG_MS.capacitor` in `speechController.js`;
+   - the mic staying red for several seconds after a very quick stop tap is expected, not a bug:
+     the recognizer finishes its own processing before reporting back.
 2. **Arabic font.** Arabic uses the device's system face (Noto Naskh on most Android phones). If a
    device renders it poorly, bundle `@fontsource/noto-naskh-arabic`.
 3. **Content depth.** `it_ad_lockout` and `lab_critical_val` have 2 steps; the rest have 3.
