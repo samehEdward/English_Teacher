@@ -64,6 +64,40 @@ class StatusStrip {
     }
 
     this._unsubscribe = speechController.subscribe(({ to }) => this._onState(to));
+    this._unsubscribeTts = speechController.onTtsIssue((err) => this._onTtsIssue(err));
+  }
+
+  /**
+   * Speech output failed. The actionable case is a phone with no voice data
+   * for the target language: Android's engine then refuses to speak German
+   * at all, which the learner experiences as "no voice" or an English voice
+   * mangling German. Offer the OS installer instead of failing silently.
+   */
+  _onTtsIssue(err) {
+    const de = this.lang === 'de';
+    if (err && err.error === 'lang-unsupported') {
+      const langName = /^de/i.test(err.lang || '') ? (de ? 'Deutsch' : 'German') : (de ? 'Englisch' : 'English');
+      this._pinned = true;
+      this.show({
+        text: de
+          ? `Auf diesem Gerät ist keine Stimme für ${langName} installiert.`
+          : `No ${langName} voice is installed on this device.`,
+        tone: 'warn',
+        sticky: true,
+        action: {
+          label: de ? 'Installieren' : 'Install',
+          onClick: () => speechController.installVoiceData()
+        }
+      });
+      return;
+    }
+    if (err && err.error !== 'not-supported') {
+      this.show({
+        text: de ? 'Die Sprachausgabe ist fehlgeschlagen. Bitte erneut versuchen.' : 'Speech output failed. Please try again.',
+        tone: 'warn',
+        duration: 3500
+      });
+    }
   }
 
   setLanguage(lang) {
@@ -205,7 +239,9 @@ class StatusStrip {
 
   destroy() {
     if (this._unsubscribe) this._unsubscribe();
+    if (this._unsubscribeTts) this._unsubscribeTts();
     this._unsubscribe = null;
+    this._unsubscribeTts = null;
   }
 }
 

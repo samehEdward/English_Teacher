@@ -241,16 +241,40 @@ class WebSpeechAdapter {
 }
 
 // --- Capacitor community plugin (native Android recognizer) -----------------
-// Activated automatically if @capacitor-community/speech-recognition is
-// installed. Referenced through window.Capacitor.Plugins so this file carries
-// no build-time dependency on the plugin.
+//
+// Runs in NON-partial mode on purpose. Verified against the plugin's Java
+// (SpeechRecognition.java, @capacitor-community/speech-recognition 7.0.1):
+//
+//   partialResults: true   start() resolves IMMEDIATELY (line ~199); the final
+//                          text arrives later via a 'partialResults' event;
+//                          'listeningState: stopped' fires from onEndOfSpeech,
+//                          i.e. BEFORE the final text; onError rejects a call
+//                          that was already resolved, so errors vanish; and
+//                          stop() never resolves its call.
+//
+//   partialResults: false  start() resolves with { matches } from onResults,
+//                          or REJECTS with the error text from onError.
+//
+// The first version of this adapter used partial mode and treated start()'s
+// immediate resolve as "session finished", so on a phone every mic session
+// ended ~50ms after it began with nothing captured. Non-partial mode trades
+// live interim text for a single, reliable result-or-error, which suits a
+// turn-based roleplay: say one reply, pause, done.
+
+// Plugin error strings (getErrorText) that mean "nothing was said" rather
+// than "something broke". These must not surface as an error to the learner.
+const NATIVE_SILENCE_ERRORS = ['No match', 'No speech input', "Didn't understand"];
+
+// Hard cap in case the native side neither resolves nor rejects (seen on some
+// OEM recognizers after an audio-focus loss). Longer than any real answer.
+const NATIVE_SESSION_CAP_MS = 45000;
 
 class CapacitorSpeechAdapter {
   constructor(plugin) {
     this._plugin = plugin;
     this._session = 0;
-    this._listener = null;
     this._active = false;
+    this._capTimer = null;
   }
 
   get id() { return 'capacitor'; }
@@ -259,7 +283,6 @@ class CapacitorSpeechAdapter {
 
   async start({
     lang = 'en-US',
-    interimResults = true,
     onStart = null,
     onInterim = null,
     onFinal = null,
@@ -270,86 +293,77 @@ class CapacitorSpeechAdapter {
 
     const session = ++this._session;
     const alive = () => session === this._session;
-
-    let lastFull = '';
     let ended = false;
 
-    const finish = () => {
+    const finish = ({ transcript = '', error = null } = {}) => {
       if (!alive() || ended) return;
       ended = true;
       this._active = false;
-      this._detach();
-      const captured = lastFull.trim();
-      if (captured && onFinal) onFinal(captured);
+      this._clearCap();
+      if (error && onError) onError(error);
+      if (!error && transcript && onFinal) onFinal(transcript);
       if (onEnd) onEnd();
     };
 
     try {
       const avail = await this._plugin.available();
+      if (!alive()) return;
       if (avail && avail.available === false) {
-        if (onError) onError({ error: 'not-supported', message: 'Recognizer unavailable.', fatal: true });
-        if (onEnd) onEnd();
+        finish({ error: { error: 'not-supported', message: 'No speech recognizer is installed on this device.', fatal: true } });
         return;
       }
 
-      const perm = await this._plugin.checkPermissions();
-      if (perm && perm.speechRecognition !== 'granted') {
-        const asked = await this._plugin.requestPermissions();
-        if (asked && asked.speechRecognition !== 'granted') {
-          if (onError) onError({ error: 'not-allowed', message: 'Microphone access was refused.', fatal: true });
-          if (onEnd) onEnd();
+      let perm = await this._plugin.checkPermissions();
+      if (!alive()) return;
+      if (!perm || perm.speechRecognition !== 'granted') {
+        perm = await this._plugin.requestPermissions();
+        if (!alive()) return;
+        if (!perm || perm.speechRecognition !== 'granted') {
+          finish({ error: { error: 'not-allowed', message: 'Microphone access was refused.', fatal: true, permission: 'denied' } });
           return;
         }
       }
+    } catch (err) {
+      finish({ error: { error: 'start-failed', message: String(err && err.message || err), fatal: true } });
+      return;
+    }
 
+    this._active = true;
+    this._capTimer = setTimeout(() => {
       if (!alive()) return;
+      try { this._plugin.stop().catch(() => {}); } catch (e) { /* ignore */ }
+      finish({});
+    }, NATIVE_SESSION_CAP_MS);
 
-      if (interimResults && typeof this._plugin.addListener === 'function') {
-        this._listener = await this._plugin.addListener('partialResults', (data) => {
-          if (!alive()) return;
-          const text = (data && data.matches && data.matches[0]) || '';
-          if (!text) return;
-          lastFull = text;
-          if (onInterim) onInterim({ final: '', interim: text, full: text });
-        });
-      }
+    if (onStart) onStart();
+    // No interim text in non-partial mode; tell the UI we are listening.
+    if (onInterim) onInterim({ final: '', interim: '', full: '' });
 
-      // listeningState tells us when the native recognizer closed on its own
-      // (silence timeout), which the start() promise does not report.
-      if (typeof this._plugin.addListener === 'function') {
-        this._stateListener = await this._plugin.addListener('listeningState', (data) => {
-          if (!alive()) return;
-          if (data && data.status === 'stopped') finish();
-        });
-      }
-
-      this._active = true;
-      if (onStart) onStart();
-
+    try {
       const result = await this._plugin.start({
         language: lang,
         maxResults: 1,
-        partialResults: interimResults,
+        partialResults: false,
         popup: false
       });
-
       if (!alive()) return;
-
       const best = (result && result.matches && result.matches[0]) || '';
-      if (best) lastFull = best;
-      finish();
+      finish({ transcript: best.trim() });
     } catch (err) {
       if (!alive()) return;
-      this._active = false;
-      this._detach();
-      if (!ended) {
-        ended = true;
-        if (onError) onError({ error: 'start-failed', message: String(err), fatal: true });
-        if (onEnd) onEnd();
+      const message = String((err && err.message) || err || '');
+      if (NATIVE_SILENCE_ERRORS.some((m) => message.includes(m))) {
+        // Nothing was said: end quietly, the UI simply returns to idle.
+        if (onError) onError({ error: 'no-speech', message, fatal: false });
+        finish({});
+        return;
       }
+      const permission = message.includes('permission') ? 'denied' : undefined;
+      finish({ error: { error: 'recognizer', message, fatal: true, permission } });
     }
   }
 
+  /** Graceful: ask the recognizer to finish; start() then resolves or rejects. */
   stop() {
     if (!this._active) return;
     try {
@@ -358,24 +372,24 @@ class CapacitorSpeechAdapter {
     } catch (e) { /* already stopped */ }
   }
 
+  /** Immediate: invalidate the session so its late resolve/reject is ignored. */
   abort() {
+    const wasActive = this._active;
     this._session += 1;
     this._active = false;
-    this._detach();
+    this._clearCap();
+    if (!wasActive) return;
     try {
       const r = this._plugin.stop();
       if (r && typeof r.catch === 'function') r.catch(() => {});
     } catch (e) { /* already stopped */ }
   }
 
-  _detach() {
-    [this._listener, this._stateListener].forEach((l) => {
-      if (l && typeof l.remove === 'function') {
-        try { l.remove(); } catch (e) { /* already removed */ }
-      }
-    });
-    this._listener = null;
-    this._stateListener = null;
+  _clearCap() {
+    if (this._capTimer) {
+      clearTimeout(this._capTimer);
+      this._capTimer = null;
+    }
   }
 }
 

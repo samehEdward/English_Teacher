@@ -18,6 +18,7 @@ import { StateMachine } from './stateMachine.js';
 import { audioEngine } from './audioEngine.js';
 import { permissionGate, MicPermission } from './permissionGate.js';
 import { createSttAdapter, toBcp47 } from './sttAdapters.js';
+import { createTtsAdapter } from './ttsAdapters.js';
 
 export const SpeechState = {
   IDLE: 'IDLE',
@@ -39,11 +40,6 @@ const TRANSITIONS = {
 // short to survive module construction, DOMContentLoaded or a tab change.
 const USER_GESTURE_WINDOW_MS = 3000;
 
-// Android silently pauses utterances longer than ~15s. Chunking at sentence
-// boundaries avoids the watchdog entirely, and beats a resume() keepalive
-// which on WebView can restart the utterance from the beginning.
-const MAX_CHUNK_CHARS = 200;
-
 // How long to wait for a recognizer to honour stop() before forcing IDLE.
 // Generous: a real recognizer flushing buffered audio can take a second or
 // two, and cutting it short would discard a valid transcript.
@@ -64,19 +60,11 @@ class SpeechController {
 
     this.lang = 'en';
     this.stt = createSttAdapter();
-    this.synth = (typeof window !== 'undefined' && window.speechSynthesis) || null;
-
-    this.voices = [];
-    this.selectedVoice = null;
+    this.tts = createTtsAdapter();
+    this._ttsIssueListeners = new Set();
 
     this.stats = { blockedSpeakCalls: 0, micCollisionsPrevented: 0 };
 
-    // TTS queue
-    this._chunks = [];
-    this._chunkIdx = 0;
-    this._speakGen = -1;
-    this._speakCallbacks = null;
-    this._deferTimer = null;
     this._stopWatchdog = null;
 
     // Mic ownership — exactly one of these is ever non-null
@@ -91,10 +79,8 @@ class SpeechController {
     this._openTurn = null;
 
     this._lastRecordingUrl = null;
-    this._voicesReady = false;
 
     this._installGestureTracker();
-    this._installVoiceLoader();
     this._installLifecycleGuards();
   }
 
@@ -110,7 +96,8 @@ class SpeechController {
 
   get sttSupported() { return this.stt.supported; }
   get sttBackend() { return this.stt.id; }
-  get ttsSupported() { return !!this.synth; }
+  get ttsSupported() { return this.tts.supported; }
+  get ttsBackend() { return this.tts.id; }
 
   /**
    * What the UI should offer on this device. The mic FAB is hidden entirely
@@ -120,7 +107,8 @@ class SpeechController {
     return {
       stt: this.stt.supported,
       sttBackend: this.stt.id,
-      tts: !!this.synth,
+      tts: this.tts.supported,
+      ttsBackend: this.tts.id,
       recording: typeof window !== 'undefined' && typeof window.MediaRecorder !== 'undefined',
       audio: audioEngine.supported
     };
@@ -128,7 +116,7 @@ class SpeechController {
 
   setLanguage(lang) {
     this.lang = lang === 'de' ? 'de' : 'en';
-    this._pickVoice();
+    this.tts.setLanguage(this.lang);
   }
 
   recognitionLang() { return toBcp47(this.lang); }
@@ -178,81 +166,27 @@ class SpeechController {
   closeTurn() { this._openTurn = null; }
 
   // == TTS ==================================================================
+  // Engine specifics (chunking, Android WebView quirks, native TextToSpeech)
+  // live in ttsAdapters.js. The controller owns only policy: provenance, the
+  // state machine, and never talking over the microphone.
 
-  _installVoiceLoader() {
-    if (!this.synth) return;
+  /** Voices the learner may pick from (web only; native uses system voice). */
+  availableVoices() { return this.tts.voices(); }
+  get selectedVoiceId() { return this.tts.selectedVoiceId; }
+  setVoiceById(id) { return this.tts.selectVoice(id); }
+  onVoicesChanged(fn) { return this.tts.onVoicesChanged(fn); }
 
-    const load = () => {
-      try {
-        this.voices = this.synth.getVoices() || [];
-      } catch (err) {
-        this.voices = [];
-      }
-      if (this.voices.length) this._voicesReady = true;
-      this._pickVoice();
-      this._emitVoices();
-    };
-
-    load();
-
-    // Single owner. v1 assigned onvoiceschanged in two files; the second
-    // assignment silently discarded the first.
-    if ('onvoiceschanged' in this.synth) {
-      this.synth.onvoiceschanged = load;
-    }
-
-    // Android WebView sometimes never fires onvoiceschanged. Poll briefly.
-    if (!this._voicesReady) {
-      let tries = 0;
-      const poll = setInterval(() => {
-        tries += 1;
-        load();
-        if (this._voicesReady || tries >= 10) clearInterval(poll);
-      }, 250);
-    }
+  /**
+   * Subscribe to speech-output problems the learner can act on - chiefly
+   * "no German voice installed" on Android. Returns an unsubscribe function.
+   */
+  onTtsIssue(fn) {
+    this._ttsIssueListeners.add(fn);
+    return () => this._ttsIssueListeners.delete(fn);
   }
 
-  _emitVoices() {
-    this._voiceListeners = this._voiceListeners || new Set();
-    this._voiceListeners.forEach((fn) => {
-      try { fn(this.availableVoices()); } catch (err) { console.error(err); }
-    });
-  }
-
-  onVoicesChanged(fn) {
-    this._voiceListeners = this._voiceListeners || new Set();
-    this._voiceListeners.add(fn);
-    return () => this._voiceListeners.delete(fn);
-  }
-
-  availableVoices() {
-    const prefix = this.lang === 'de' ? 'de' : 'en';
-    const matching = this.voices.filter((v) => v.lang && v.lang.toLowerCase().startsWith(prefix));
-    return matching.length ? matching : this.voices;
-  }
-
-  _pickVoice() {
-    const pool = this.availableVoices();
-    if (!pool.length) { this.selectedVoice = null; return; }
-
-    // Keep an explicit user choice if it is still valid for this language.
-    if (this.selectedVoice && pool.some((v) => v.voiceURI === this.selectedVoice.voiceURI)) return;
-
-    const quality = /Natural|Neural|Online|Google|Enhanced|Premium/i;
-    const region = this.lang === 'de' ? /de-DE/i : /en-US|en-GB/i;
-
-    this.selectedVoice =
-      pool.find((v) => quality.test(v.name) && region.test(v.lang)) ||
-      pool.find((v) => region.test(v.lang)) ||
-      pool.find((v) => v.localService) ||
-      pool[0];
-  }
-
-  setVoiceByUri(uri) {
-    const found = this.voices.find((v) => v.voiceURI === uri);
-    if (found) this.selectedVoice = found;
-    return !!found;
-  }
+  /** Open the OS voice-data installer (native only). */
+  installVoiceData() { return this.tts.installVoiceData(); }
 
   /**
    * Speak text. PROVENANCE IS MANDATORY.
@@ -263,10 +197,6 @@ class SpeechController {
    * Anything else is refused: returns false, warns with a stack trace, and
    * increments stats.blockedSpeakCalls. This is what makes rogue auto-TTS on
    * load / view change / language switch impossible to write.
-   *
-   * onBoundary receives ABSOLUTE charIndex into `text` even though the
-   * utterance is internally chunked — readAloud's karaoke highlight depends
-   * on that.
    *
    * @returns {boolean} whether speech was accepted
    */
@@ -283,8 +213,8 @@ class SpeechController {
   } = {}) {
     if (!text || !String(text).trim()) return false;
 
-    if (!this.synth) {
-      if (onError) onError(new Error('Speech synthesis is not available on this device.'));
+    if (!this.tts.supported) {
+      if (onError) onError({ error: 'not-supported', message: 'Speech output is not available on this device.' });
       return false;
     }
 
@@ -297,25 +227,37 @@ class SpeechController {
       return false;
     }
 
-    this._hardStopTts();
+    this.tts.cancel();
 
     const gen = this.fsm.transition(SpeechState.SPEAKING, { reason: 'speak' });
     if (gen === null) return false;
 
-    this._chunks = this._chunkText(String(text));
-    this._chunkIdx = 0;
-    this._speakGen = gen;
-    this._rate = rate;
-    this._pitch = pitch;
-    this._speakCallbacks = { onStart, onBoundary, onEnd, onError };
-
-    // Android swallows a speak() issued in the same task as cancel().
-    // Defer by one macrotask, re-checking the generation before firing.
-    this._deferTimer = setTimeout(() => {
-      this._deferTimer = null;
-      if (this.fsm.isStale(gen)) return;
-      this._speakNextChunk(gen);
-    }, 0);
+    this.tts.speak({
+      text: String(text),
+      lang: this.recognitionLang(),
+      rate,
+      pitch,
+      onStart: () => {
+        if (this.fsm.isStale(gen)) return;
+        if (onStart) onStart();
+      },
+      onBoundary: onBoundary
+        ? (e) => { if (!this.fsm.isStale(gen)) onBoundary(e); }
+        : null,
+      onEnd: () => {
+        if (this.fsm.isStale(gen)) return;
+        this.fsm.transition(SpeechState.IDLE, { reason: 'tts-complete' });
+        if (onEnd) onEnd();
+      },
+      onError: (err) => {
+        if (this.fsm.isStale(gen)) return;
+        this.fsm.transition(SpeechState.IDLE, { reason: 'tts-error' });
+        this._ttsIssueListeners.forEach((fn) => {
+          try { fn(err); } catch (e) { console.error(e); }
+        });
+        if (onError) onError(err);
+      }
+    });
 
     return true;
   }
@@ -352,178 +294,8 @@ class SpeechController {
     );
   }
 
-  /**
-   * Split into <=MAX_CHUNK_CHARS pieces at sentence boundaries, each tagged
-   * with its absolute offset so boundary events stay meaningful.
-   */
-  _chunkText(text) {
-    if (text.length <= MAX_CHUNK_CHARS) return [{ text, offset: 0 }];
-
-    // Index-based throughout: spans are contiguous and cover the whole string,
-    // so offsets are correct and no content is dropped, by construction.
-
-    // 1. Sentence-ish spans, delimiter kept with the sentence.
-    const sentences = [];
-    const re = /[^.!?…:;\n]+[.!?…:;\n]*\s*/g;
-    let match;
-    let consumed = 0;
-    while ((match = re.exec(text)) !== null) {
-      if (match[0].length === 0) { re.lastIndex += 1; continue; }
-      sentences.push([match.index, match.index + match[0].length]);
-      consumed = match.index + match[0].length;
-    }
-    if (consumed < text.length) sentences.push([consumed, text.length]);
-    if (!sentences.length) sentences.push([0, text.length]);
-
-    // 2. Hard-split any span over the limit, preferring a whitespace break.
-    //    A 600-character run with no spaces (a URL, a pasted token) must still
-    //    come out under the limit, so fall back to an exact cut.
-    const spans = [];
-    sentences.forEach(([start, end]) => {
-      let from = start;
-      while (end - from > MAX_CHUNK_CHARS) {
-        const limit = from + MAX_CHUNK_CHARS;
-        // Search strictly before the limit: a space sitting exactly on it
-        // would make cut = limit + 1 and push the chunk one char oversize.
-        const space = text.lastIndexOf(' ', limit - 1);
-        const cut = space > from ? space + 1 : limit;
-        spans.push([from, cut]);
-        from = cut;
-      }
-      if (end > from) spans.push([from, end]);
-    });
-
-    // 3. Re-merge adjacent spans while they still fit, so short sentences are
-    //    spoken together and prosody survives.
-    const chunks = [];
-    let curStart = null;
-    let curEnd = null;
-
-    spans.forEach(([start, end]) => {
-      if (curStart === null) { curStart = start; curEnd = end; return; }
-      if (end - curStart <= MAX_CHUNK_CHARS) {
-        curEnd = end;
-      } else {
-        chunks.push({ text: text.slice(curStart, curEnd), offset: curStart });
-        curStart = start;
-        curEnd = end;
-      }
-    });
-    if (curStart !== null) chunks.push({ text: text.slice(curStart, curEnd), offset: curStart });
-
-    // A whitespace-only utterance may never fire onend on Android and would
-    // stall the queue. Dropping it is safe because offsets are absolute.
-    const speakable = chunks.filter((c) => c.text.trim().length > 0);
-    return speakable.length ? speakable : [{ text, offset: 0 }];
-  }
-
-  _speakNextChunk(gen) {
-    if (this.fsm.isStale(gen)) return;
-
-    if (this._chunkIdx >= this._chunks.length) {
-      const cb = this._speakCallbacks;
-      this._resetTtsQueue();
-      this.fsm.transition(SpeechState.IDLE, { reason: 'tts-complete' });
-      if (cb && cb.onEnd) cb.onEnd();
-      return;
-    }
-
-    const chunk = this._chunks[this._chunkIdx];
-    const isFirst = this._chunkIdx === 0;
-    const cb = this._speakCallbacks;
-
-    let utterance;
-    try {
-      utterance = new SpeechSynthesisUtterance(chunk.text);
-    } catch (err) {
-      this._failSpeak(gen, err);
-      return;
-    }
-
-    utterance.rate = Math.max(0.5, Math.min(2.0, this._rate || 1.0));
-    utterance.pitch = Math.max(0.5, Math.min(1.5, this._pitch || 1.0));
-
-    if (this.selectedVoice) {
-      utterance.voice = this.selectedVoice;
-      utterance.lang = this.selectedVoice.lang;
-    } else {
-      utterance.lang = this.recognitionLang();
-    }
-
-    utterance.onstart = () => {
-      if (this.fsm.isStale(gen)) return;
-      if (isFirst && cb && cb.onStart) cb.onStart();
-    };
-
-    if (cb && cb.onBoundary) {
-      utterance.onboundary = (event) => {
-        if (this.fsm.isStale(gen)) return;
-        cb.onBoundary({
-          charIndex: chunk.offset + (event.charIndex || 0),
-          charLength: event.charLength || 0,
-          name: event.name,
-          elapsedTime: event.elapsedTime
-        });
-      };
-    }
-
-    utterance.onend = () => {
-      if (this.fsm.isStale(gen)) return;
-      this._chunkIdx += 1;
-      this._speakNextChunk(gen);
-    };
-
-    utterance.onerror = (event) => {
-      if (this.fsm.isStale(gen)) return;
-
-      // 'interrupted' / 'canceled' are our own cancel() landing — the
-      // generation check usually catches these first, but Android can fire
-      // them with the generation still current during teardown.
-      const code = (event && event.error) || '';
-      if (code === 'interrupted' || code === 'canceled') return;
-
-      this._failSpeak(gen, event);
-    };
-
-    this._currentUtterance = utterance;
-
-    try {
-      this.synth.speak(utterance);
-    } catch (err) {
-      this._failSpeak(gen, err);
-    }
-  }
-
-  _failSpeak(gen, err) {
-    if (this.fsm.isStale(gen)) return;
-    const cb = this._speakCallbacks;
-    this._resetTtsQueue();
-    this.fsm.transition(SpeechState.IDLE, { reason: 'tts-error' });
-    if (cb && cb.onError) cb.onError(err);
-  }
-
-  _resetTtsQueue() {
-    this._chunks = [];
-    this._chunkIdx = 0;
-    this._speakGen = -1;
-    this._speakCallbacks = null;
-    this._currentUtterance = null;
-  }
-
   _hardStopTts() {
-    if (this._deferTimer) {
-      clearTimeout(this._deferTimer);
-      this._deferTimer = null;
-    }
-    this._resetTtsQueue();
-    if (!this.synth) return;
-    try {
-      if (this.synth.speaking || this.synth.pending || this.synth.paused) {
-        this.synth.cancel();
-      }
-    } catch (err) {
-      console.debug('[speech] synth.cancel threw', err);
-    }
+    this.tts.cancel();
   }
 
   /** Stop any speech immediately and return to IDLE. */

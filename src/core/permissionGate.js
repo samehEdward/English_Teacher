@@ -145,6 +145,13 @@ class PermissionGate {
       if (native && typeof native.request === 'function') {
         try {
           const res = await native.request();
+          if (res && res.state === MicPermission.GRANTED) {
+            // Stop here. Falling through to getUserMedia would open a WebView
+            // audio track and release it milliseconds before the native
+            // SpeechRecognizer grabs the mic - an audio-HAL race that shows
+            // up on phones as sporadic "Audio recording error".
+            return { state: this._cache(MicPermission.GRANTED), error: null };
+          }
           if (res && res.state === MicPermission.DENIED) {
             this._cache(MicPermission.DENIED);
             return { state: MicPermission.DENIED, error: null };

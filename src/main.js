@@ -362,7 +362,7 @@ class App {
     this.populateVoices();
 
     select.addEventListener('change', (event) => {
-      if (speechController.setVoiceByUri(event.target.value)) {
+      if (speechController.setVoiceById(event.target.value)) {
         storageService.saveSettings({ preferredVoice: event.target.value });
       }
     });
@@ -380,12 +380,12 @@ class App {
       return;
     }
 
-    const current = speechController.selectedVoice;
+    const current = speechController.selectedVoiceId;
     select.innerHTML = voices
       .map((v) => {
         const name = v.name.replace(/Microsoft |Google |Android /g, '');
-        const selected = current && current.voiceURI === v.voiceURI ? ' selected' : '';
-        return `<option value="${v.voiceURI}"${selected}>${name} (${v.lang})</option>`;
+        const selected = current === v.id ? ' selected' : '';
+        return `<option value="${v.id}"${selected}>${name} (${v.lang})</option>`;
       })
       .join('');
   }
@@ -396,7 +396,7 @@ class App {
 
     // Voices may not have arrived yet on a cold WebView start.
     const apply = () => {
-      if (speechController.setVoiceByUri(preferred)) {
+      if (speechController.setVoiceById(preferred)) {
         this.populateVoices();
         return true;
       }
